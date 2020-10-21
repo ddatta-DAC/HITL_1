@@ -87,11 +87,10 @@ def main(
 ):
     global DATA_SOURCE
     global save_dir
+
     company_cols = ['ConsigneePanjivaID', 'ShipperPanjivaID']
     company_col_abbr = {'C': 'ConsigneePanjivaID', 'S': 'ShipperPanjivaID'}
-
     df = pd.read_csv(os.path.join(DATA_SOURCE, 'train_data.csv'), low_memory=False, index_col=None)
-
     df_subset = df[company_cols].groupby(company_cols).size().reset_index(name='count').sort_values(by='count',
                                                                                                     ascending=False)
 
@@ -217,7 +216,9 @@ def main(
         for n in seed_dict[_type]:
             nbrs.extend([n1 for n1 in subgraph.neighbors(n) if subgraph.degree(n1) <= seed_degree_upper_bound])
         nbrs = list(set(nbrs))
-        seed_bipartite_nbrs[_type] = nbrs
+        # get C or S
+        n_type = nbrs[0][0]
+        seed_bipartite_nbrs[n_type] = nbrs
 
     # ==================================
     # Accumulate the nodes of each type
@@ -237,6 +238,8 @@ def main(
         _type = company_col_abbr[_type]
         target_nodes_dict[_type].extend(_list)
 
+    for _type in target_nodes_dict.keys():
+        target_nodes_dict[_type] = set([int(_[1:]) for _ in target_nodes_dict[_type]])
     save_file = os.path.join(save_dir, 'seed_nodes.pkl')
     # Save in a pickle file
     with open(save_file, "wb") as fh:
@@ -254,5 +257,11 @@ parser.add_argument(
 
 args = parser.parse_args()
 DIR = args.DIR
-set_up_config(DIR)
-target_nodes_dict = main(DIR)
+set_up_config(
+    DIR
+)
+target_nodes_dict = main(
+    DIR,
+    init_seed_count=25,
+    min_oh_nbr_count=3
+)
