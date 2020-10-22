@@ -11,25 +11,35 @@ import multiprocessing as mp
 
 # ======================================== #
 
-def generate_negative_samples( df, DIR, data_source_loc=None, id_col = 'PanjivaRecordID', num_neg_samples = 10):
+def generate_negative_samples(
+        df,
+        DIR,
+        data_source_loc=None,
+        id_col = 'PanjivaRecordID',
+        num_neg_samples = 10
+):
     if data_source_loc is None:
         data_source_loc = './../generated_data_v1/'
+
     loc = os.path.join(data_source_loc, DIR)
     with open(os.path.join(loc, 'domain_dims.pkl'), 'rb') as fh:
         domain_dims = pickle.load(fh)
 
-
-    def gen_sample_aux(row, domain_dims, num_neg_samples):
-        domains = list(domain_dims.keys())
+    idMapper_file = os.path.join(loc,'stage_2', 'idMapping.csv')
+    idMapping_df = pd.read_csv(idMapper_file, index_col=None)
+    domain_values = {}
+    for d in domain_dims.keys():
+        domain_values[d] = idMapping_df.loc[idMapping_df['domain']==d]['serial_id'].vlaues.tolist()
+    def gen_sample_aux(row, domain_values, num_neg_samples):
+        domains = list(domain_values.keys())
         num_domains = len(domains)
-
         res = []
         for _ in range(num_neg_samples):
             new_row = row.copy()
             pert_count = np.random.randint(0,num_domains//2)
             sel_domains = np.random.choice( domains, pert_count, replace=False )
             for sd in sel_domains:
-                new_row[sd] = np.random.randint(0,domain_dims[sd])
+                new_row[sd] = np.random.choice(domain_values[sd],1)
 
             del new_row[id_col]
             vals = new_row.values.tolist()

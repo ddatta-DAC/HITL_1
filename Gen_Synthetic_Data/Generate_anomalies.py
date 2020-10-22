@@ -143,7 +143,6 @@ def perturb_row(
         id_col='PanjivaRecordID'
 ):
     all_cols = sorted(domain_dims.keys())
-
     row_dict = row.to_dict()
     domains_perturb = [ _ for _ in domain_dims.keys() if _ not in fixed_columns]
 
@@ -166,7 +165,6 @@ def perturb_row(
         if  _hash not in hash_list:
             break
     # Perturb the ID
-
     new_row[id_col] = int(str(new_row[id_col]) + str(1001))
     return new_row
 
