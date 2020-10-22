@@ -8,9 +8,38 @@ pandarallel.initialize()
 from tqdm import tqdm
 import pickle
 import multiprocessing as mp
+from joblib.externals.loky import set_loky_pickler
+from joblib import parallel_backend
+from joblib import Parallel, delayed
+from joblib import wrap_non_picklable_objects
+from collections import OrderedDict
+
 
 # ======================================== #
 
+
+def gen_sample_aux(row, domain_values_dict, num_neg_samples):
+    num_domains = len(domain_values_dict.keys())
+    domains = list(domain_values_dict.keys())
+    res = []
+    id_col = 'PanjivaRecordID'
+    for _ in range(num_neg_samples):
+        new_row = row.copy()
+        pert_count = np.random.randint(0,num_domains//2)
+        sel_domains = np.random.choice( domains, pert_count, replace=False )
+        for sd in sel_domains:
+            new_row[sd] = np.random.choice(domain_values_dict[sd],1)
+
+        del new_row[id_col]
+        vals = new_row.values.tolist()
+        res.append(vals)
+
+    x_n = np.array(res)
+    row = row.copy()
+    del row[id_col]
+    x = row.values
+    return (x, x_n)
+          
 def generate_negative_samples(
         df,
         DIR,
@@ -30,35 +59,15 @@ def generate_negative_samples(
     domain_values = {}
     for d in domain_dims.keys():
         domain_values[d] = idMapping_df.loc[idMapping_df['domain']==d]['serial_id'].values.tolist()
-    def gen_sample_aux(row, domain_values, num_neg_samples):
-        domains = list(domain_values.keys())
-        num_domains = len(domains)
-        res = []
-        for _ in range(num_neg_samples):
-            new_row = row.copy()
-            pert_count = np.random.randint(0,num_domains//2)
-            sel_domains = np.random.choice( domains, pert_count, replace=False )
-            for sd in sel_domains:
-                new_row[sd] = np.random.choice(domain_values[sd],1)
 
-            del new_row[id_col]
-            vals = new_row.values.tolist()
-            res.append(vals)
-
-        x_n = np.array(res)
-        row = row.copy()
-        del row[id_col]
-        x = row.values
-        return (x, x_n)
-
-    results = Parallel(
-        n_jobs=mp.cpu_count()
-    )(delayed(gen_sample_aux)(
-        row, domain_dims, num_neg_samples
-    ) for i,row in tqdm(df.iterrows(), total=df.shape[0])
-      )
+    results = Parallel(n_jobs = mp.cpu_count())(
+        delayed(gen_sample_aux)(row, domain_values, num_neg_samples,) 
+        for i,row in tqdm(df.iterrows(), total=df.shape[0])
+    )
+    
     x_p = []
     x_n = []
+    
     for r in results:
         x_p.append(r[0])
         x_n.append(r[1])
