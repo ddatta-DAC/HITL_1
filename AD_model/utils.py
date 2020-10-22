@@ -25,7 +25,7 @@ def generate_negative_samples(
     with open(os.path.join(loc, 'domain_dims.pkl'), 'rb') as fh:
         domain_dims = pickle.load(fh)
 
-    idMapper_file = os.path.join(loc,'stage_2', 'idMapping.csv')
+    idMapper_file = os.path.join(loc, 'idMapping.csv')
     idMapping_df = pd.read_csv(idMapper_file, index_col=None)
     domain_values = {}
     for d in domain_dims.keys():
