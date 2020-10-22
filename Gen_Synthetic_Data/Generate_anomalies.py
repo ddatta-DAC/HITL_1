@@ -139,7 +139,7 @@ def perturb_row(
         fixed_columns,
         domain_dims,
         hash_list,
-        perturb_count=3,
+        perturb_count=4,
         id_col='PanjivaRecordID'
 ):
     all_cols = sorted(domain_dims.keys())
@@ -160,7 +160,7 @@ def perturb_row(
                     continue
                 new_row[d] = rnd_e
                 break
-        _hash = '_'.join([new_row[_] for _ in all_cols])
+        _hash = '_'.join([str(new_row[_]) for _ in all_cols])
 
         # Exit : on not a duplicate
         if  _hash not in hash_list:
@@ -180,7 +180,7 @@ def generate_anomalies(
     # Create hash of each row to check for duplicates/clashes
     all_cols = sorted(domain_dims.keys())
     ref_df['hash'] = ref_df.parallel_apply(
-        lambda row: '_'.join([row[_] for _ in all_cols]),axis=1
+        lambda row: '_'.join([str(row[_]) for _ in all_cols]),axis=1
     )
     hash_list = ref_df['hash'].values.tolist()
     del ref_df['hash']
