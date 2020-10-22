@@ -29,7 +29,7 @@ def generate_negative_samples(
     idMapping_df = pd.read_csv(idMapper_file, index_col=None)
     domain_values = {}
     for d in domain_dims.keys():
-        domain_values[d] = idMapping_df.loc[idMapping_df['domain']==d]['serial_id'].vlaues.tolist()
+        domain_values[d] = idMapping_df.loc[idMapping_df['domain']==d]['serial_id'].values.tolist()
     def gen_sample_aux(row, domain_values, num_neg_samples):
         domains = list(domain_values.keys())
         num_domains = len(domains)
