@@ -87,7 +87,7 @@ def get_regex(_type):
         if _type == 'train':
             return '.*0[1-3]_2015.csv'
         if _type == 'test':
-            return '.*0[7-9]_2015.csv'
+            return '.*0[4-6]_2015.csv'
 
     if DIR == 'us_import2':
         if _type == 'train':
