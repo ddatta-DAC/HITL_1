@@ -4,7 +4,10 @@ import sys
 sys.path.append('./../..')
 sys.path.append('./..')
 import pandas as pd
-from . import utils
+try:
+    import utils
+except:
+    from . import utils
 import numpy as np
 
 # ============================
