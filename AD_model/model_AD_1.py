@@ -6,10 +6,12 @@ from torch import LongTensor as LT
 from torch import FloatTensor as FT
 import numpy as np
 from tqdm import tqdm
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class AD(nn.Module):
-    def __init__(self, num_entities, emb_dim ):
+    def __init__(self, num_entities, emb_dim , device):
         super(AD, self).__init__()
+        self.device = device
         self.num_entities = num_entities
         self.emb = nn.Embedding(num_entities,emb_dim)
         self.mode = 'train'
@@ -41,9 +43,8 @@ class AD(nn.Module):
               
                 list_scores_n.append(_score)
             scores_n = torch.cat(list_scores_n,dim=1)
-
             scores_n = torch.log(scores_n)
-            scores_n = torch.mean(scores_n,dim=-1,keepdim=True)
+            scores_n = torch.sum(scores_n,dim=-1,keepdim=True)
             scores_p = torch.log(scores_p)
             sample_scores = scores_n + scores_p
             batch_score_mean = torch.mean(torch.squeeze(sample_scores))
@@ -53,8 +54,10 @@ class AD(nn.Module):
             return torch.squeeze(scores)
 
 class AD_model_container():
-    def __init__(self, entity_count, emb_dim):
-        self.model = AD ( entity_count, emb_dim)
+    def __init__(self, entity_count, emb_dim, device ):
+        self.model = AD ( entity_count, emb_dim, device)
+        self.model.to(device)
+        self.device = device
         return
 
     def train_model(self, train_x_pos, train_x_neg, batch_size = 512, epochs = 10, log_interval=100):
@@ -64,20 +67,21 @@ class AD_model_container():
         num_batches = train_x_pos.shape[0] // bs + 1
         idx = np.arange(train_x_pos.shape[0])
         loss_value_history = []
+        
         for e in tqdm(range(epochs)):
             np.random.shuffle(idx)
             for b in range(num_batches):
                 opt.zero_grad()
                 b_idx = idx[b*bs:(b+1)*bs]
-                x_p = LT(train_x_pos[b_idx])
-                x_n = LT(train_x_neg[b_idx])
+                x_p = LT(train_x_pos[b_idx]).to(self.device)
+                x_n = LT(train_x_neg[b_idx]).to(self.device)
                 
                 loss = -self.model(x_p,x_n)
                 loss.backward()
                 opt.step()
-                loss_value_history.extend(loss.data.numpy().to_list())
+                loss_value_history.append(loss.cpu().data.numpy().tolist())
                 if b % log_interval == 0 :
-                    print('Epoch {}  batch {} Loss {:4f}'.format(e,b, loss.data.numpy()))
+                    print('Epoch {}  batch {} Loss {:4f}'.format(e,b, loss.cpu().data.numpy()))
         try:
             import matplotlib.pyplot as plt
             y = loss_value_history
@@ -99,9 +103,9 @@ class AD_model_container():
         for b in range(num_batches):
             b_idx = idx[b * bs:(b + 1) * bs]
             if len(b_idx)==0: break
-            x = LT(x_test[b_idx])
+            x = LT(x_test[b_idx]).to(self.device)
             score_values = self.model(x)
-            vals = score_values.dat.numpy().tolist()
+            vals = score_values.cpu().data.numpy().tolist()
             results.extend(vals)
         return results
 
