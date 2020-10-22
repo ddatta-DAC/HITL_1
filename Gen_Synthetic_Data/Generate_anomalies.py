@@ -180,7 +180,7 @@ def generate_anomalies(
     # Create hash of each row to check for duplicates/clashes
     all_cols = sorted(domain_dims.keys())
     ref_df['hash'] = ref_df.parallel_apply(
-        lambda row: '_'.join([row[_] for _ in all_cols])
+        lambda row: '_'.join([row[_] for _ in all_cols]),axis=1
     )
     hash_list = ref_df['hash'].values.tolist()
     del ref_df['hash']
