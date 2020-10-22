@@ -138,39 +138,57 @@ def perturb_row(
         row,
         fixed_columns,
         domain_dims,
+        hash_list,
         perturb_count=3,
         id_col='PanjivaRecordID'
 ):
-    new_row = row.copy()
+    all_cols = sorted(domain_dims.keys())
+
     row_dict = row.to_dict()
-    domains_perturb = [_ for _ in domain_dims.keys() if _ not in fixed_columns]
+    domains_perturb = [ _ for _ in domain_dims.keys() if _ not in fixed_columns]
 
     domains_perturb = np.random.choice(domains_perturb, size=perturb_count, replace=False)
+    while True:
+        new_row = row.copy()
+        for i in range(perturb_count):
+            d = domains_perturb[i]
+            e = row_dict[d]
+            # select a random entity
+            while True:
+                rnd_e = np.random.randint(0, domain_dims[d])
+                if rnd_e == e:
+                    continue
+                new_row[d] = rnd_e
+                break
+        _hash = '_'.join([new_row[_] for _ in all_cols])
 
-    for i in range(perturb_count):
-        d = domains_perturb[i]
-        e = row_dict[d]
-        # select a random entity
-        while True:
-            rnd_e = np.random.randint(0, domain_dims[d])
-            if rnd_e == e:
-                continue
-            new_row[d] = rnd_e
+        # Exit : on not a duplicate
+        if  _hash not in hash_list:
             break
     # Perturb the ID
+
     new_row[id_col] = int(str(new_row[id_col]) + str(1001))
     return new_row
 
 
 def generate_anomalies(
         target_df,
+        ref_df,
         actor_columns,
         domain_dims
 ):
+    # Create hash of each row to check for duplicates/clashes
+    all_cols = sorted(domain_dims.keys())
+    ref_df['hash'] = ref_df.parallel_apply(
+        lambda row: '_'.join([row[_] for _ in all_cols])
+    )
+    hash_list = ref_df['hash'].values.tolist()
+    del ref_df['hash']
+
     anomalous_records = target_df.parallel_apply(
         perturb_row,
         axis=1,
-        args=(actor_columns, domain_dims,)
+        args=(actor_columns, domain_dims,   hash_list, )
     )
     return anomalous_records
 
@@ -208,14 +226,17 @@ def main():
     print('Print # positive, negative samples', num_positive_samples, len(negative_samples))
     pos_neg_IDs = list(negative_samples[id_col].values) + list(positive_samples[id_col].values)
 
+    ref_df = train_df.copy()
     negative_samples = generate_anomalies(
         negative_samples,
+        ref_df,
         actor_columns,
         domain_dims
     )
 
     positive_samples = generate_anomalies(
         positive_samples,
+        ref_df,
         actor_columns,
         domain_dims
     )
@@ -250,6 +271,5 @@ parser.add_argument(
 
 args = parser.parse_args()
 DIR = args.DIR
-
 set_up_config(DIR)
 main()
