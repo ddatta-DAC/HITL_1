@@ -1,7 +1,8 @@
 import argparse
 import os
 import sys
-sys.path.append('..')
+sys.path.append('./../..')
+sys.path.append('./..')
 import pandas as pd
 from . import utils
 import numpy as np
@@ -16,8 +17,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 DIR = args.DIR
-
-
 
 save_dir_stage_1 = './../generated_data_v1/us_import1'
 save_dir_stage_2 = './../generated_data_v1/us_import1/stage_2'
