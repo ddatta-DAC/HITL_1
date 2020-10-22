@@ -248,19 +248,19 @@ def main():
     # ========================================
 
     # Normal samples
-    save_path = os.path.join(save_dir, 'test_normal_data_csv')
+    save_path = os.path.join(save_dir, 'test_normal_data.csv')
     normal_samples.to_csv(save_path, index=None)
 
     # Positive samples
-    save_path = os.path.join(save_dir, 'test_pos_data_csv')
+    save_path = os.path.join(save_dir, 'test_pos_data.csv')
     positive_samples.to_csv(save_path, index=None)
 
     # Negative samples
-    save_path = os.path.join(save_dir, 'test_neg_data_csv')
+    save_path = os.path.join(save_dir, 'test_neg_data.csv')
     negative_samples.to_csv(save_path, index=None)
 
     # Save all the cleaned records
-    save_path = os.path.join(save_dir, 'cleaned_test_data_csv')
+    save_path = os.path.join(save_dir, 'cleaned_test_data.csv')
 
 
 parser = argparse.ArgumentParser()
