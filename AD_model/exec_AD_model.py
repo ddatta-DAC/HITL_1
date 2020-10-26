@@ -86,9 +86,9 @@ def main(DIR):
     data = {'label': labels, 'score': scores , 'PnjivaRecordID': id_list}
     df = pd.DataFrame(data)
     # Save data
-    df.to_csv(os.path.join(RESULTS_OP_PATH,'AD_output.csv'),index=None)
 
     df = df.sort_values(by='score')
+    df.to_csv(os.path.join(RESULTS_OP_PATH, 'AD_output.csv'), index=None)
     # ======
     # Print out some checks
     # ======
