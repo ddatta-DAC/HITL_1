@@ -39,7 +39,7 @@ def main(DIR):
     domain_dims = get_domain_dims(DIR)
     total_entity_count = sum(domain_dims.values())
     model = AD.AD_model_container(total_entity_count, emb_dim=16, device=device)
-    model.train_model(x_pos,x_neg, batch_size=128, epochs=25)
+    model.train_model(x_pos,x_neg, batch_size=128, epochs=50)
     model.save_model('saved_model/us_import1')
     model.model.mode='test'
     test_df = pd.read_csv( './../generated_data_v1/{}/stage_2/test_normal_serialized.csv'.format(DIR), index_col=None )

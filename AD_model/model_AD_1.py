@@ -124,10 +124,10 @@ class AD_model_container():
     def save_model(self, loc=None):
         if loc is None:
             loc = './saved_models'
+        path_obj = Path(loc)
+        path_obj.mkdir(parents=True, exist_ok=True)
         loc = os.path.join(loc, self.signature )
         self.save_path = loc
-        path_obj = Path(loc)
-        path_obj.mkdir(parents=True,exist_ok=True)
         torch.save(self.model.state_dict(), loc)
 
 
