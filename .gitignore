@@ -1,4 +1,6 @@
 **/.ipynb_checkpoints/
 /Data_Raw/
 /generated_data_v1/
+*/.ipynb_checkpoints/
 /AD_model/.ipynb_checkpoints/
+.ipynb_checkpoints/*
