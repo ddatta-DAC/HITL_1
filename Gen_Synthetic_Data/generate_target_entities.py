@@ -118,6 +118,7 @@ def main(
     component_id = 0
     components = {}
     component_size_dict = {}
+
     for c in nx.connected_components(B):
         components[component_id] = c
         component_size_dict[component_id] = len(c)
