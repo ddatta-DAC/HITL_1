@@ -22,7 +22,7 @@ def get_domain_dims(DIR):
 
 def get_training_data(DIR):
     x_pos = np.load('./../generated_data_v1/{}/stage_2/train_x_pos.npy'.format(DIR))
-    x_neg = np.load('./../generated_data_v1/{}}/stage_2/train_x_neg.npy'.format(DIR))
+    x_neg = np.load('./../generated_data_v1/{}/stage_2/train_x_neg.npy'.format(DIR))
     return x_pos, x_neg
 
 # ===================================== #
@@ -42,7 +42,7 @@ def main(DIR):
     model.train_model(x_pos,x_neg, batch_size=128, epochs=25)
     model.save_model('saved_model/us_import1')
     model.model.mode='test'
-    test_df = pd.read_csv( './../generated_data_v1/us_import1/stage_2/test_normal_serialized.csv', index_col=None )
+    test_df = pd.read_csv( './../generated_data_v1/{}/stage_2/test_normal_serialized.csv'.format(DIR), index_col=None )
 
     # -------------------------------------------------
     # Normal records
@@ -53,7 +53,7 @@ def main(DIR):
 
     # -------------------------------------------------
     # Positive anomalies
-    test_df_p = pd.read_csv( './../generated_data_v1/us_import1/stage_2/test_pos_serialized.csv', index_col=None )
+    test_df_p = pd.read_csv( './../generated_data_v1/{}/stage_2/test_pos_serialized.csv'.format(DIR), index_col=None )
     id_list_p = test_df_p[ID_COL].values.tolist()
     del test_df_p[ID_COL]
     test_xp = test_df_p.values
@@ -62,7 +62,7 @@ def main(DIR):
     # -------------------------------------------------
     # Negative anomalies
 
-    test_df_n = pd.read_csv( './../generated_data_v1/us_import1/stage_2/test_neg_serialized.csv', index_col=None )
+    test_df_n = pd.read_csv( './../generated_data_v1/{}/stage_2/test_neg_serialized.csv'.format(DIR), index_col=None )
     id_list_n = test_df_n[ID_COL].values.tolist()
     del test_df_n[ID_COL]
     test_xn = test_df_n.values
