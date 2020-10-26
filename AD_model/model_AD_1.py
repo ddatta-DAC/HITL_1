@@ -7,6 +7,13 @@ from torch import FloatTensor as FT
 import numpy as np
 from tqdm import tqdm
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from pathlib import Path
+import time
+from time import time
+import os
+from pathlib import Path
+
+
 
 class AD(nn.Module):
     def __init__(self, num_entities, emb_dim , device):
@@ -54,10 +61,14 @@ class AD(nn.Module):
             return torch.squeeze(scores)
 
 class AD_model_container():
+
     def __init__(self, entity_count, emb_dim, device ):
         self.model = AD ( entity_count, emb_dim, device)
         self.model.to(device)
         self.device = device
+        self.entity_count = entity_count
+        self.emb_dim = emb_dim
+        self.signature = 'model_{}_{}'.format(entity_count,int(time()))
         return
 
     def train_model(self, train_x_pos, train_x_neg, batch_size = 512, epochs = 10, log_interval=100):
@@ -93,6 +104,7 @@ class AD_model_container():
             plt.close()
         except:
             pass
+        self.model.mode = 'test'
         return
 
     def score_samples(self,x_test):
@@ -108,6 +120,26 @@ class AD_model_container():
             vals = score_values.cpu().data.numpy().tolist()
             results.extend(vals)
         return results
+
+    def save_model(self, loc=None):
+        if loc is None:
+            loc = './saved_models'
+        os.path.join(loc, self.signature )
+        self.save_path = loc
+        path_obj = Path(loc)
+        path_obj.mkdir(parents=True,exist_ok=True)
+        torch.save(self.AD_model.state_dict(), loc)
+
+
+    def load_model(self, path = None):
+        if self.save_path is None and path is None:
+            print('Error . Null path given to load model ')
+            return None
+        if path is None:
+            path = self.save_path
+        self.AD_model =AD( emb_dim=self.emb_dim,num_entities=self.entity_count)
+        self.AD_model.load_state_dict(torch.load(path))
+        self.AD_model.eval()
 
 # data_p = np.array([[1,2,3],[9,7,3]])
 # data_n = np.array([[[7,4,5],[4,3,9],[7,4,5]], [[7,6,5],[7,4,5],[4,8,1]]])
