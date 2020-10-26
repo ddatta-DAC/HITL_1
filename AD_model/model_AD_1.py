@@ -128,7 +128,7 @@ class AD_model_container():
         self.save_path = loc
         path_obj = Path(loc)
         path_obj.mkdir(parents=True,exist_ok=True)
-        torch.save(self.AD_model.state_dict(), loc)
+        torch.save(self.model.state_dict(), loc)
 
 
     def load_model(self, path = None):
@@ -137,9 +137,9 @@ class AD_model_container():
             return None
         if path is None:
             path = self.save_path
-        self.AD_model =AD( emb_dim=self.emb_dim,num_entities=self.entity_count)
-        self.AD_model.load_state_dict(torch.load(path))
-        self.AD_model.eval()
+        self.model =AD( emb_dim=self.emb_dim,num_entities=self.entity_count)
+        self.model.load_state_dict(torch.load(path))
+        self.model.eval()
 
 # data_p = np.array([[1,2,3],[9,7,3]])
 # data_n = np.array([[[7,4,5],[4,3,9],[7,4,5]], [[7,6,5],[7,4,5],[4,8,1]]])
