@@ -139,7 +139,7 @@ def perturb_row(
         fixed_columns,
         domain_dims,
         hash_list,
-        perturb_count=4,
+        perturb_count=3,
         id_col='PanjivaRecordID'
 ):
     all_cols = sorted(domain_dims.keys())
@@ -173,7 +173,8 @@ def generate_anomalies(
         target_df,
         ref_df,
         actor_columns,
-        domain_dims
+        domain_dims,
+        anom_perturb_count
 ):
     # Create hash of each row to check for duplicates/clashes
     all_cols = sorted(domain_dims.keys())
@@ -186,7 +187,7 @@ def generate_anomalies(
     anomalous_records = target_df.parallel_apply(
         perturb_row,
         axis=1,
-        args=(actor_columns, domain_dims,   hash_list, )
+        args=(actor_columns, domain_dims,  hash_list, anom_perturb_count )
     )
     return anomalous_records
 
@@ -195,7 +196,8 @@ def main():
     global DAT_SOURCE
     global domain_dims
     global save_dir
-
+    global anom_perturb_count
+    
     actor_pos_nodes_dict = get_positive_nodes()
     actor_columns = ['ConsigneePanjivaID', 'ShipperPanjivaID']
 
@@ -229,14 +231,16 @@ def main():
         negative_samples,
         ref_df,
         actor_columns,
-        domain_dims
+        domain_dims,
+        anom_perturb_count
     )
 
     positive_samples = generate_anomalies(
         positive_samples,
         ref_df,
         actor_columns,
-        domain_dims
+        domain_dims,
+        anom_perturb_count
     )
     positive_samples[id_col] = positive_samples[id_col].apply(lambda x: int(str(x) + str(1002)))
     normal_samples = cleaned_records.loc[~(cleaned_records[id_col].isin(pos_neg_IDs))]
@@ -260,14 +264,21 @@ def main():
     # Save all the cleaned records
     save_path = os.path.join(save_dir, 'cleaned_test_data.csv')
 
-
+# ===========================================================
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--DIR', choices=['us_import1', 'us_import2', 'us_import3'],
     default='us_import1'
 )
 
+parser.add_argument(
+    '--anom_perturb_count',
+    type = int,
+    default = 3
+)
+
 args = parser.parse_args()
 DIR = args.DIR
+anom_perturb_count = args.anom_perturb_count
 set_up_config(DIR)
 main()
