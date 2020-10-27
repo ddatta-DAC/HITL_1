@@ -14,10 +14,7 @@ from joblib import Parallel, delayed
 from joblib import wrap_non_picklable_objects
 from collections import OrderedDict
 
-
 # ======================================== #
-
-
 def gen_sample_aux(row, domain_values_dict, num_neg_samples):
     num_domains = len(domain_values_dict.keys())
     domains = list(domain_values_dict.keys())
@@ -124,6 +121,13 @@ def convert_to_serializedID_format(
 
 
 
-
+def fetch_idMappingFile(DIR):
+    loc = os.path.join('./../generated_data_v1',DIR)
+    idMapper_file = os.path.join(loc, 'idMapping.csv')
+    if os.path.exists(idMapper_file) :
+        idMapping_df = pd.read_csv(idMapper_file, index_col=None)
+        return idMapping_df 
+    else:
+        return None
 
 
