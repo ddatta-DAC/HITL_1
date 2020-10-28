@@ -249,7 +249,7 @@ def save_vectors(node_vectors):
         #         for n_id in sorted(_dict.keys()):
         #             arr_vec.append(_dict[n_id])
         arr_vec = np.array(arr_vec)
-        fname = 'mp2v_{}_.npy'.format(n_type)
+        fname = 'mp2v_{}.npy'.format(n_type)
         fname = os.path.join(MODEL_SAVE_DATA_LOC, fname)
         np.save(fname, arr_vec)
 
