@@ -85,7 +85,7 @@ def main(DIR):
     pathobj = Path(SAVE_DIR)
     pathobj.mkdir(exist_ok=True, parents=True)
 
-    edges_df.to_csv(os.path.join(SAVE_DIR, 'egdes.csv'), index=False)
+    edges_df.to_csv(os.path.join(SAVE_DIR, 'edges.csv'), index=False)
     nodes_df.to_csv(os.path.join(SAVE_DIR, 'nodes.csv'), index=False)
 
 
