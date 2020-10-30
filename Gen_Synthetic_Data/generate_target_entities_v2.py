@@ -211,10 +211,10 @@ def main_process():
     # Total anomalies should be approximately between 5 to 10%
     # -----------------------------------------------------------
     ANOM_PERC_THRESHOLD_LB = 2.00
-    ANOM_PERC_THRESHOLD_UB = 5.50
+    ANOM_PERC_THRESHOLD_UB = 10.50
     # -----------------------------------------------------------
     # generate anomalies from top k communities by size
-    TOP_K_COMMUNITIES = 15
+    TOP_K_COMMUNITIES = 20
     # ------------------------------------------------------------
 
     train_df = pd.read_csv(
@@ -303,7 +303,7 @@ def main_process():
 
         record_count = 0
         for pair in all_marked:
-            record_count += len(df_test.loc[(df_test['ConsigneePanjivaID'] == int(pair[0][1:])) | (
+            record_count += len(df_test.loc[(df_test['ConsigneePanjivaID'] == int(pair[0][1:])) & (
                     df_test['ShipperPanjivaID'] == int(pair[1][1:]))])
         percentage = record_count / len(df_test) * 100
         print(' [  ======>   ]', percentage, record_count, len(df_test))
