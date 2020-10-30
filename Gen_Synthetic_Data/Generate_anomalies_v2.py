@@ -216,7 +216,7 @@ def main():
     test_df = pd.read_csv(os.path.join(DATA_SOURCE, 'test_data.csv'), low_memory=False)
     test_df = test_df.drop_duplicates(list(domain_dims.keys()))
 
-    cleaned_test_df = remove_spurious_coOcc(
+    cleaned_test_df: object = remove_spurious_coOcc(
         test_df,
         train_df,
         domain_dims
@@ -231,21 +231,39 @@ def main():
         match =  df.loc[(df[CONSIGNEE_column]==row[CONSIGNEE_column]) & (df[SHIPPER_column]==row[SHIPPER_column])]
         print(len(match))
         return match
+
     matches = Parallel(n_jobs=mp.cpu_count())(
         delayed(fetch_matches)(
             row, cleaned_test_df) for i,row in tqdm(target_edges.iterrows(), total=target_edges.shape[0])
     )
+    record_count = 0
     positive_samples = None
-    for m in matches:
+    for pair in zip(target_edges['ConsigneePanjivaID'].values, target_edges['ShipperPanjivaID'].values):
+        _C = int(pair[0])
+        _S = int(pair[1])
+        tmp = cleaned_test_df.loc[(cleaned_test_df['ConsigneePanjivaID'] == _C) &
+                                (cleaned_test_df['ShipperPanjivaID'] == _S)]
+        record_count += len(tmp)
         if positive_samples is None:
-            positive_samples = pd.DataFrame(m)
+            positive_samples = pd.DataFrame(tmp)
         else:
-            positive_samples = positive_samples.append(m,ignore_index=True)
+            positive_samples = positive_samples.append(tmp, ignore_index=True)
+
+
+    print(record_count, len(cleaned_test_df), record_count/len(cleaned_test_df))
+    print(' >> ', len(positive_samples))
+    # positive_samples = None
+    # for m in matches:
+    #     if positive_samples is None:
+    #         positive_samples = pd.DataFrame(m)
+    #     else:
+    #         positive_samples = positive_samples.append(m,ignore_index=True)
 
     # positive_samples = cleaned_records.loc[
     #     (cleaned_records['ConsigneePanjivaID'].isin(actor_pos_nodes_dict['ConsigneePanjivaID'])) | (
     #         cleaned_records['ShipperPanjivaID'].isin(actor_pos_nodes_dict['ShipperPanjivaID']))]
     num_positive_samples = len(positive_samples)
+
     set_consignee = target_edges[CONSIGNEE_column]
     set_shipper = target_edges[SHIPPER_column]
     candidates = cleaned_test_df.loc[
