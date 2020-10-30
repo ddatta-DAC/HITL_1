@@ -26,6 +26,7 @@ import operator
 import collections
 import argparse
 from networkx.algorithms import community
+from common_utils.utils import remove_spurious_coOcc
 
 CONFIG = None
 DIR_LOC = None
@@ -78,7 +79,6 @@ def set_up_config(_DIR=None):
     _cols.remove(id_col)
     attribute_columns = list(sorted(_cols))
     return
-
 
 # =============================
 # Main utility function
@@ -150,7 +150,6 @@ def get_clusters(G, comm, max_pairs=1, max_indirect_nbr_count=3):
         marked_edges.extend(new_subgraph.edges())
         count += 1
         if count >= max_pairs: break
-
     return marked_edges
 
 
@@ -196,6 +195,10 @@ def main_process():
     global DATA_SOURCE
     global CUT_OFF
     global save_dir
+
+    with open(os.path.join(DATA_SOURCE, 'domain_dims.pkl'), 'rb') as fh:
+        domain_dims = pickle.load(fh)
+
     # =======================================
     company_cols = ['ConsigneePanjivaID', 'ShipperPanjivaID']
     company_col_abbr = {'C': 'ConsigneePanjivaID', 'S': 'ShipperPanjivaID'}
@@ -207,21 +210,21 @@ def main_process():
     # -----------------------------------------------------------
     # Total anomalies should be approximately between 5 to 10%
     # -----------------------------------------------------------
-    ANOM_PERC_THRESHOLD_LB = 2.5
-    ANOM_PERC_THRESHOLD_UB = 7.50
+    ANOM_PERC_THRESHOLD_LB = 2.00
+    ANOM_PERC_THRESHOLD_UB = 5.50
     # -----------------------------------------------------------
     # generate anomalies from top k communities by size
-    TOP_K_COMMUNITIES = 10
+    TOP_K_COMMUNITIES = 15
     # ------------------------------------------------------------
 
-    df = pd.read_csv(
+    train_df = pd.read_csv(
         os.path.join(DATA_SOURCE, 'train_data.csv'),
         low_memory=False,
         index_col=None
     )
-    attributes = [_ for _ in list(df.columns) if _ not in id_col]
-    df = df.drop_duplicates(subset=attributes)
-    df_subset = df[company_cols].groupby(
+    attributes = [_ for _ in list(train_df.columns) if _ not in id_col]
+    train_df = train_df.drop_duplicates(subset=attributes)
+    df_subset = train_df[company_cols].groupby(
         company_cols).size().reset_index(
         name='count').sort_values(by='count', ascending=False)
 
@@ -285,7 +288,11 @@ def main_process():
         index_col=None
     )
     df_test = df_test.drop_duplicates(subset=attribute_columns)
-
+    df_test = remove_spurious_coOcc(
+        df_test,
+        train_df,
+        domain_dims
+    )
     edge_list = []
     while True:
         all_marked = []
@@ -299,13 +306,12 @@ def main_process():
             record_count += len(df_test.loc[(df_test['ConsigneePanjivaID'] == int(pair[0][1:])) | (
                     df_test['ShipperPanjivaID'] == int(pair[1][1:]))])
         percentage = record_count / len(df_test) * 100
-        print(' [  ======   ]', percentage)
+        print(' [  ======>   ]', percentage, record_count, len(df_test))
         edge_list = all_marked
         # --- Found:  break
         if percentage >= ANOM_PERC_THRESHOLD_LB and percentage <= ANOM_PERC_THRESHOLD_UB:
             break
-
-
+    print('Number of edges ', len(edge_list))
     result_edge_pairs = {}
     for d in company_col_abbr.values(): result_edge_pairs[d] = []
     for e in edge_list:

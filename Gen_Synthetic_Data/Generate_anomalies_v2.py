@@ -24,6 +24,10 @@ import networkx as nx
 import operator
 import collections
 import argparse
+try:
+    from common_utils.utils import remove_spurious_coOcc
+except:
+    from .common_utils.utils import remove_spurious_coOcc
 
 CONFIG = None
 DIR_LOC = None
@@ -93,20 +97,23 @@ def get_positive_edges():
     edges_df = pd.read_csv(os.path.join(save_dir, 'seed_edges.csv'), index_col=None)
     return edges_df
 
+
+
 # Remove duplicates from test set1
-def check_suprious_coOcc(
+def check_spurious_coOcc(
         target_df,
         ref_df,
         domain_dims,
         actor_columns=['ConsigneePanjvaID', 'ShipperPanjivaID'],
-        id_col='PanjivaRecordID'):
+        ):
+    id_col = 'PanjivaRecordID'
     # =========================================
     # create a hash
     # =========================================
     print(len(target_df))
     domains = [_ for _ in domain_dims.keys() if _ not in actor_columns]
     domain_pairs = [sorted(a) for a in combinations(domains, 2)]
-    domain_pair_keys = ['_'.join(a) for a in domain_pairs]
+
     valid_values_dict = {}
 
     for domain_pair in domain_pairs:
@@ -209,7 +216,7 @@ def main():
     test_df = pd.read_csv(os.path.join(DATA_SOURCE, 'test_data.csv'), low_memory=False)
     test_df = test_df.drop_duplicates(list(domain_dims.keys()))
 
-    cleaned_test_df = check_suprious_coOcc(
+    cleaned_test_df = remove_spurious_coOcc(
         test_df,
         train_df,
         domain_dims
@@ -217,15 +224,18 @@ def main():
     # -----------------------------------------------------------------
     # Select some records that should be used  to generate anomalies
     # -----------------------------------------------------------------
-    positive_samples = None
+
 
     def fetch_matches(row, df):
-        return df.loc[(df[CONSIGNEE_column]==row[CONSIGNEE_column])&(df[SHIPPER_column]==row[SHIPPER_column])]
-
+        row = row.to_dict()
+        match =  df.loc[(df[CONSIGNEE_column]==row[CONSIGNEE_column]) & (df[SHIPPER_column]==row[SHIPPER_column])]
+        print(len(match))
+        return match
     matches = Parallel(n_jobs=mp.cpu_count())(
         delayed(fetch_matches)(
             row, cleaned_test_df) for i,row in tqdm(target_edges.iterrows(), total=target_edges.shape[0])
     )
+    positive_samples = None
     for m in matches:
         if positive_samples is None:
             positive_samples = pd.DataFrame(m)

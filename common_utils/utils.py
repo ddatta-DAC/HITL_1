@@ -13,7 +13,7 @@ from joblib import parallel_backend
 from joblib import Parallel, delayed
 from joblib import wrap_non_picklable_objects
 from collections import OrderedDict
-
+from itertools import combinations
 # ======================================== #
 def gen_sample_aux(row, domain_values_dict, num_neg_samples):
     num_domains = len(domain_values_dict.keys())
@@ -130,4 +130,46 @@ def fetch_idMappingFile(DIR):
     else:
         return None
 
+# ----------------------------------
+# Remove spurious co-occurrences
+# ----------------------------------
+def remove_spurious_coOcc(
+        target_df,
+        ref_df,
+        domain_dims,
+        actor_columns=['ConsigneePanjvaID', 'ShipperPanjivaID'],
+):
+    id_col = 'PanjivaRecordID'
+    # =========================================
+    # create a hash
+    # =========================================
+    print(len(target_df))
+    domains = [_ for _ in domain_dims.keys() if _ not in actor_columns]
+    domain_pairs = [sorted(a) for a in combinations(domains, 2)]
 
+    valid_values_dict = {}
+
+    for domain_pair in domain_pairs:
+        df_tmp = ref_df.groupby(domain_pair).size().reset_index(name='count')
+        d1 = domain_pair[0]
+        d2 = domain_pair[1]
+        key = '_'.join(domain_pair)
+        df_tmp['pair'] = df_tmp.apply(lambda x: str(x[d1]) + '_' + str(x[d2]), axis=1)
+        valid_values_dict[key] = list(df_tmp['pair'].values)
+
+    def aux_check(row, domain_pairs):
+        flag = True
+        for domain_pair in domain_pairs:
+            d1 = domain_pair[0]
+            d2 = domain_pair[1]
+            key = '_'.join(domain_pair)
+            value = str(row[d1]) + '_' + str(row[d2])
+            if value not in valid_values_dict[key]:
+                flag = False
+        return flag
+
+    target_df['valid'] = target_df.parallel_apply(aux_check, axis=1, args=(domain_pairs,))
+    target_df = target_df.loc[target_df['valid'] == True]
+    del target_df['valid']
+    print(' Post check length of test set::', len(target_df))
+    return target_df
