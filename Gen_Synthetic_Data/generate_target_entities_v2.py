@@ -146,7 +146,7 @@ def get_clusters(G, comm, max_pairs=1, max_indirect_nbr_count=3):
         target_nodes.extend(node2_nbr_2)
 
         new_subgraph = sg_obj.subgraph(target_nodes)
-        print(new_subgraph.edges(), new_subgraph.number_of_edges(), new_subgraph.number_of_nodes())
+        # print(new_subgraph.edges(), new_subgraph.number_of_edges(), new_subgraph.number_of_nodes())
         marked_edges.extend(new_subgraph.edges())
         count += 1
         if count >= max_pairs: break
