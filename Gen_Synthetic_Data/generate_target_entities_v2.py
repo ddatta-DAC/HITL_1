@@ -299,7 +299,6 @@ def main_process():
             edges = get_clusters(B2, communities[i], max_pairs=1, max_indirect_nbr_count=5)
             all_marked.extend(edges)
         all_marked = [sorted(_) for _ in all_marked]
-
         record_count = 0
         for pair in all_marked:
             _C = int(pair[0][1:])
@@ -317,7 +316,8 @@ def main_process():
             break
     print('Number of edges ', len(edge_list))
     result_edge_pairs = {}
-    for d in company_col_abbr.values(): result_edge_pairs[d] = []
+    for d in company_col_abbr.values():
+        result_edge_pairs[d] = []
     for e in edge_list:
         e1 = int(e[0][1:])
         d1 = company_col_abbr[e[0][0]]
@@ -325,7 +325,9 @@ def main_process():
         e2 = int(e[1][1:])
         d2 = company_col_abbr[e[1][0]]
         result_edge_pairs[d2].append(e2)
+
     result_df = pd.DataFrame.from_dict(result_edge_pairs)
+    print('Result dataframe, with edge list', len(result_df))
     # Save the results
     f_path = os.path.join(save_dir, 'seed_edges.csv')
     result_df.to_csv(f_path, index=None)
