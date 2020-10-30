@@ -1,0 +1,2 @@
+python3 generate_target_entities_v2.py
+python3 Generate_anomalies_v2.py
