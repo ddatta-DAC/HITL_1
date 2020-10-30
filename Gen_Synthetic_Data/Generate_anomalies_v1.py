@@ -87,7 +87,6 @@ def get_positive_nodes():
     global save_dir
     with open(os.path.join(save_dir, 'seed_nodes.pkl'), 'rb') as fh:
         nodes_dict = pickle.load(fh)
-
     return nodes_dict
 
 
@@ -124,7 +123,6 @@ def check_suprious_coOcc(
             value = str(row[d1]) + '_' + str(row[d2])
             if value not in valid_values_dict[key]:
                 flag = False
-
         return flag
 
     target_df['valid'] = target_df.parallel_apply(aux_check, axis=1, args=(domain_pairs,))
