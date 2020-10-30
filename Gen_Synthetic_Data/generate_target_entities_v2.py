@@ -95,13 +95,13 @@ def get_clusters(G, comm, max_pairs=1, max_indirect_nbr_count=3):
         edgeWt_dict[e] = sg_obj.get_edge_data(e[0], e[1])['weight']
         # 50% of weights
 
-    wt_lb = 2
+    wt_lb = 3
     wt_ub = 10
     candidate_edges = {}
 
     for edge, wt in edgeWt_dict.items():
         if wt <= wt_lb or wt > wt_ub: continue
-        if sg_obj.degree(e[0]) <= DEGREE_LB and sg_obj.degree(e[1]) <= DEGREE_LB: continue
+        if sg_obj.degree(e[0]) < DEGREE_LB and sg_obj.degree(e[1]) < DEGREE_LB: continue
         if sg_obj.degree(e[0]) > DEGREE_UB or sg_obj.degree(e[1]) > DEGREE_UB: continue
 
         #     print(edge, wt ,(sg_obj.degree(e[0]),sg_obj.degree(e[1])))
@@ -207,8 +207,8 @@ def main_process():
     # -----------------------------------------------------------
     # Total anomalies should be approximately between 5 to 10%
     # -----------------------------------------------------------
-    ANOM_PERC_THRESHOLD_LB = 2.50
-    ANOM_PERC_THRESHOLD_UB = 5.50
+    ANOM_PERC_THRESHOLD_LB = 2.5
+    ANOM_PERC_THRESHOLD_UB = 7.50
     # -----------------------------------------------------------
     # generate anomalies from top k communities by size
     TOP_K_COMMUNITIES = 10
@@ -300,8 +300,11 @@ def main_process():
                     df_test['ShipperPanjivaID'] == int(pair[1][1:]))])
         percentage = record_count / len(df_test) * 100
         print(' [  ======   ]', percentage)
-        if percentage >= ANOM_PERC_THRESHOLD_LB and percentage <= ANOM_PERC_THRESHOLD_UB: break
         edge_list = all_marked
+        # --- Found:  break
+        if percentage >= ANOM_PERC_THRESHOLD_LB and percentage <= ANOM_PERC_THRESHOLD_UB:
+            break
+
 
     result_edge_pairs = {}
     for d in company_col_abbr.values(): result_edge_pairs[d] = []
