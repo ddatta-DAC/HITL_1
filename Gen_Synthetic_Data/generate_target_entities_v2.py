@@ -125,7 +125,7 @@ def get_clusters(G, comm, max_pairs=1, max_indirect_nbr_count=3):
             n2_nbr = np.random.choice([_ for _ in sg_obj.neighbors(node2) if
                                        sg_obj.degree(_) > DEGREE_LB and sg_obj.degree(_) < DEGREE_UB and _ != node1],
                                       1)[0]
-            print('>>', n1_nbr, n2_nbr)
+            # print('>>', n1_nbr, n2_nbr)
         except:
             continue
         if n1_nbr is None or n2_nbr is None:
@@ -293,7 +293,6 @@ def main_process():
         train_df,
         domain_dims
     )
-    edge_list = []
     while True:
         all_marked = []
         for i in range(0, TOP_K_COMMUNITIES):
@@ -303,11 +302,16 @@ def main_process():
 
         record_count = 0
         for pair in all_marked:
-            record_count += len(df_test.loc[(df_test['ConsigneePanjivaID'] == int(pair[0][1:])) & (
-                    df_test['ShipperPanjivaID'] == int(pair[1][1:]))])
-        percentage = record_count / len(df_test) * 100
-        print(' [  ======>   ]', percentage, record_count, len(df_test))
+            _C = int(pair[0][1:])
+            _S = int(pair[1][1:])
+            record_count += len(df_test.loc[
+                                    (df_test['ConsigneePanjivaID'] == _C) &
+                                    (df_test['ShipperPanjivaID'] == _S)]
+                                )
+        percentage = (record_count / len(df_test)) * 100
+        print(' [  ======>  ', percentage, record_count, len(df_test),']')
         edge_list = all_marked
+        print(' Length of edge list >> ', len(all_marked))
         # --- Found:  break
         if percentage >= ANOM_PERC_THRESHOLD_LB and percentage <= ANOM_PERC_THRESHOLD_UB:
             break
