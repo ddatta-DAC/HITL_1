@@ -90,26 +90,29 @@ def main(
 
     company_cols = ['ConsigneePanjivaID', 'ShipperPanjivaID']
     company_col_abbr = {'C': 'ConsigneePanjivaID', 'S': 'ShipperPanjivaID'}
-    df = pd.read_csv(os.path.join(DATA_SOURCE, 'train_data.csv'), low_memory=False, index_col=None)
-    df_subset = df[company_cols].groupby(company_cols).size().reset_index(name='count').sort_values(by='count',
-                                                                                                    ascending=False)
+    df = pd.read_csv(
+        os.path.join(DATA_SOURCE, 'train_data.csv'),
+        low_memory=False,
+        index_col=None
+    )
+    df_subset = df[company_cols].groupby(
+        company_cols).size().reset_index(
+        name='count').sort_values(by='count', ascending=False)
 
     df_subset['ConsigneePanjivaID'] = df_subset['ConsigneePanjivaID'].apply(
         lambda x: 'C' + str(x)
     )
-
     df_subset['ShipperPanjivaID'] = df_subset['ShipperPanjivaID'].apply(
         lambda x: 'S' + str(x)
     )
 
     B = nx.Graph()
-
     B.add_nodes_from(set(df_subset['ConsigneePanjivaID'].values), bipartite=0)
     B.add_nodes_from(set(df_subset['ShipperPanjivaID'].values), bipartite=1)
-
     # Add edges
     edges = []
-    for i, j, k in zip(df_subset['ConsigneePanjivaID'].values, df_subset['ShipperPanjivaID'].values,
+    for i, j, k in zip(df_subset['ConsigneePanjivaID'].values,
+                       df_subset['ShipperPanjivaID'].values,
                        df_subset['count'].values):
         edges.append((i, j, {'weight': k}))
 
@@ -125,11 +128,11 @@ def main(
         component_id += 1
 
     component_size_dict = sorted(component_size_dict.items(), key=operator.itemgetter(1), reverse=True)
-
+    # Get the largest connected component
     max_component = components[component_size_dict[0][0]]
     subgraph = B.subgraph(max_component)
-    subgraph.number_of_edges()
-    subgraph.number_of_nodes()
+
+    print('Number of nodes and edges', subgraph.number_of_edges(), subgraph.number_of_nodes())
     degree_sequence = sorted([d for n, d in subgraph.degree()], reverse=True)  # degree sequence
     degreeCount = collections.Counter(degree_sequence)
     deg, cnt = zip(*degreeCount.items())
@@ -139,7 +142,6 @@ def main(
         plt.title("Degree Histogram")
         plt.ylabel("Count")
         plt.xlabel("Degree")
-
         plt.show()
     except:
         pass
@@ -195,14 +197,15 @@ def main(
 
     C_onehop_nbrs = []
     for nc in seed_dict['C']:
-        ohn = find_one_hop_neigbbor(subgraph, nc, seed_degree_upper_bound, exclsion_list=seed_dict['S'],
-                                    count=min_oh_nbr_count)
+        ohn = find_one_hop_neigbbor(
+            subgraph, nc, seed_degree_upper_bound, exclsion_list=seed_dict['S'], count=min_oh_nbr_count
+        )
         C_onehop_nbrs.extend(ohn)
 
     S_onehop_nbrs = []
     for nc in seed_dict['S']:
-        ohn = find_one_hop_neigbbor(subgraph, nc, seed_degree_upper_bound, exclsion_list=seed_dict['C'],
-                                    count=min_oh_nbr_count)
+        ohn = find_one_hop_neigbbor(
+            subgraph, nc, seed_degree_upper_bound, exclsion_list=seed_dict['C'], count=min_oh_nbr_count)
         S_onehop_nbrs.extend(ohn)
 
     seed_onehop_nbrs = {
@@ -211,7 +214,6 @@ def main(
     }
 
     seed_bipartite_nbrs = {'C': [], 'S': []}
-
     for _type in ('C', 'S'):
         nbrs = []
         for n in seed_dict[_type]:
@@ -226,7 +228,6 @@ def main(
     # These are the ones that are "Bad"
     # ==================================
     target_nodes_dict = {_: [] for _ in company_col_abbr.values()}
-
     for _type, _list in seed_dict.items():
         _type = company_col_abbr[_type]
         target_nodes_dict[_type].extend(_list)
