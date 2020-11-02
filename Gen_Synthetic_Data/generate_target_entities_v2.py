@@ -88,7 +88,7 @@ def get_clusters(G, comm, max_pairs=1, max_indirect_nbr_count=3):
     global CUT_OFF
     DEGREE_LB = 3
     DEGREE_UB = CUT_OFF
-
+    if max_indirect_nbr_count > CUT_OFF: CUT_OFF = max_indirect_nbr_count
     sg_obj = G.subgraph(comm)
     edgeWt_dict = {}
     for e in sg_obj.edges():
@@ -296,7 +296,7 @@ def main_process():
     while True:
         all_marked = []
         for i in range(0, TOP_K_COMMUNITIES):
-            edges = get_clusters(B2, communities[i], max_pairs=1, max_indirect_nbr_count=5)
+            edges = get_clusters(B2, communities[i], max_pairs=5, max_indirect_nbr_count=10)
             all_marked.extend(edges)
         all_marked = [sorted(_) for _ in all_marked]
         record_count = 0
