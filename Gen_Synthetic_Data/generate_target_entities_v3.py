@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import operator
+import collections
+import argparse
+import networkx as nx
 from networkx import bipartite
 sys.path.append('./../..')
 sys.path.append('./..')
@@ -10,7 +14,6 @@ from tqdm import tqdm
 import joblib
 from joblib import Parallel, delayed
 from pandarallel import pandarallel
-
 pandarallel.initialize()
 import re
 import yaml
@@ -18,15 +21,10 @@ from collections import Counter
 import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
-import networkx
-
-id_col = 'PanjivaRecordID'
-import networkx as nx
-import operator
-import collections
-import argparse
 from networkx.algorithms import community
 
+
+id_col = 'PanjivaRecordID'
 CONFIG = None
 DIR_LOC = None
 CONFIG = None
@@ -171,6 +169,7 @@ def main_process():
     global ANOM_PERC_LB
     global ANOM_PERC_UB
     global CUT_OFF
+    global MAX_CLUSTERS
 
     company_cols = ['ConsigneePanjivaID', 'ShipperPanjivaID']
     company_col_abbr = {'C': 'ConsigneePanjivaID', 'S': 'ShipperPanjivaID'}
@@ -229,11 +228,10 @@ def main_process():
     subgraph = None
 
     while FOUND == False:
-
         edges = generate_edge_clusters(
             B,
             max_pairs=30,
-            grow_size=4,
+            grow_size=3,
             grow_steps=5,
             min_size=8
         )
@@ -262,8 +260,7 @@ def main_process():
             FOUND = False
 
         try:
-            import matplotlib.pyplot as plt
-            import networkx as nx
+
             pos = nx.spring_layout(subgraph)
             nx.draw(subgraph, pos, node_size=100, cmap=plt.cm.Blues)
             plt.show()
