@@ -3,7 +3,7 @@ import numpy as np
 import os
 import sys
 from networkx import bipartite
-
+import networkx as nx
 sys.path.append('./../..')
 sys.path.append('./..')
 import glob
@@ -220,11 +220,7 @@ def main_process():
     degree_sequence = sorted([d for n, d in B.degree()], reverse=True)
     CUT_OFF = int(np.percentile(degree_sequence, 90))
     print(' cut off degree ', CUT_OFF)
-
-    B1 = nx.Graph(B)
-
     # ====================
-
     FOUND = False
     subgraph = None
 
@@ -233,7 +229,7 @@ def main_process():
         edges = generate_edge_clusters(
             B,
             max_pairs=30,
-            grow_size=3,
+            grow_size=4,
             grow_steps=5,
             min_size=8
         )
