@@ -3,7 +3,6 @@ import numpy as np
 import os
 import sys
 from networkx import bipartite
-import networkx as nx
 sys.path.append('./../..')
 sys.path.append('./..')
 import glob
@@ -19,6 +18,7 @@ from collections import Counter
 import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
+import networkx
 
 id_col = 'PanjivaRecordID'
 import networkx as nx
@@ -89,7 +89,6 @@ def set_up_config(_DIR=None):
 
 def generate_edge_clusters(
         G,
-        comm,
         max_pairs=2,
         grow_size=3,
         grow_steps=2,
@@ -167,7 +166,10 @@ def generate_edge_clusters(
 # Main process
 # ----------------------------------------- #
 def main_process():
-    global DIR, DATA_SOURCE, ANOM_PERC_LB, ANOM_PERC_UB
+    global DIR
+    global DATA_SOURCE
+    global ANOM_PERC_LB
+    global ANOM_PERC_UB
 
     company_cols = ['ConsigneePanjivaID', 'ShipperPanjivaID']
     company_col_abbr = {'C': 'ConsigneePanjivaID', 'S': 'ShipperPanjivaID'}
@@ -201,6 +203,7 @@ def main_process():
     # --------------------
     # Create a bipartite graph
     # --------------------
+    import networkx as nx
     B = nx.Graph()
     B.add_nodes_from(set(df_subset['ConsigneePanjivaID'].values), bipartite=0)
     B.add_nodes_from(set(df_subset['ShipperPanjivaID'].values), bipartite=1)
@@ -304,4 +307,3 @@ set_up_config(
     DIR
 )
 main_process()
-
