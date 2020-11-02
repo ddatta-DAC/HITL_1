@@ -6,3 +6,4 @@
 .ipynb_checkpoints/*
 */__pycache__/
 *.py[cod]
+/AD_model/.ipynb_checkpoints/
