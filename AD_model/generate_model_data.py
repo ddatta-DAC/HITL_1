@@ -7,7 +7,7 @@ import pandas as pd
 try:
     import utils
 except:
-    from . import utils
+    from common_utils import utils
 import numpy as np
 
 # ============================
@@ -37,8 +37,6 @@ test_neg_df.to_csv(os.path.join(save_dir_stage_2,'test_neg_serialized.csv'),inde
 test_pos_df = pd.read_csv(os.path.join(save_dir_stage_2, 'test_pos_data.csv' ), index_col=None)
 test_pos_df = utils.convert_to_serializedID_format(test_pos_df,DIR)
 test_pos_df.to_csv(os.path.join(save_dir_stage_2,'test_pos_serialized.csv'), index=None)
-
-
 
 train_df = pd.read_csv(os.path.join(save_dir_stage_1, 'train_data.csv' ), index_col=None)
 ID_COL = 'PanjivaRecordID'

@@ -137,10 +137,10 @@ class AD_model_container():
             return None
         if path is None:
             path = self.save_path
-        self.model = AD( emb_dim=self.emb_dim,num_entities=self.entity_count)
+        self.model = AD( emb_dim=self.emb_dim, num_entities=self.entity_count)
         self.model.load_state_dict(torch.load(path))
         self.model.eval()
-
+        return
 # data_p = np.array([[1,2,3],[9,7,3]])
 # data_n = np.array([[[7,4,5],[4,3,9],[7,4,5]], [[7,6,5],[7,4,5],[4,8,1]]])
 #
