@@ -170,6 +170,7 @@ def main_process():
     global DATA_SOURCE
     global ANOM_PERC_LB
     global ANOM_PERC_UB
+    global CUT_OFF
 
     company_cols = ['ConsigneePanjivaID', 'ShipperPanjivaID']
     company_col_abbr = {'C': 'ConsigneePanjivaID', 'S': 'ShipperPanjivaID'}
