@@ -209,7 +209,7 @@ def main():
 
         # Ensure that ids are different
         positive_samples['serial_id'] = np.arange(positive_samples.shape[0])
-        positive_samples[id_col] = positive_samples.apply(lambda x: int(str(x[id_col]) + '00'+ str(x['serial_id'])))
+        positive_samples[id_col] = positive_samples.parallel_apply(lambda x: int(str(x[id_col]) + '00'+ str(x['serial_id'])),axis=1)
         del positive_samples['serial_id']
 
     num_positive_samples = len(positive_samples)
