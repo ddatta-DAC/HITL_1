@@ -39,7 +39,7 @@ use_cols = None
 freq_bound = None
 attribute_columns = None
 domain_dims = None
-
+TOTAL_ANOM_PERC = -1
 
 def set_up_config(_DIR=None):
     global DIR
@@ -82,65 +82,13 @@ def set_up_config(_DIR=None):
     with open(os.path.join(DATA_SOURCE, 'domain_dims.pkl'), 'rb') as fh:
         domain_dims = pickle.load(fh)
     print('Domains and sizes', domain_dims)
-
     return
-
-
-# def get_positive_nodes():
-#     global save_dir
-#     with open(os.path.join(save_dir, 'seed_nodes.pkl'), 'rb') as fh:
-#         nodes_dict = pickle.load(fh)
-#     return nodes_dict
 
 def get_positive_edges():
     global save_dir
-    edges_df = pd.read_csv(os.path.join(save_dir, 'seed_edges.csv'), index_col=None)
+    edges_df = pd.read_csv(
+        os.path.join(save_dir, 'seed_edges.csv'), index_col=None)
     return edges_df
-
-
-
-# Remove duplicates from test set1
-def check_spurious_coOcc(
-        target_df,
-        ref_df,
-        domain_dims,
-        actor_columns=['ConsigneePanjvaID', 'ShipperPanjivaID'],
-        ):
-    id_col = 'PanjivaRecordID'
-    # =========================================
-    # create a hash
-    # =========================================
-    print(len(target_df))
-    domains = [_ for _ in domain_dims.keys() if _ not in actor_columns]
-    domain_pairs = [sorted(a) for a in combinations(domains, 2)]
-
-    valid_values_dict = {}
-
-    for domain_pair in domain_pairs:
-        df_tmp = ref_df.groupby(domain_pair).size().reset_index(name='count')
-        d1 = domain_pair[0]
-        d2 = domain_pair[1]
-        key = '_'.join(domain_pair)
-        df_tmp['pair'] = df_tmp.apply(lambda x: str(x[d1]) + '_' + str(x[d2]), axis=1)
-        valid_values_dict[key] = list(df_tmp['pair'].values)
-
-    def aux_check(row, domain_pairs):
-        flag = True
-        for domain_pair in domain_pairs:
-            d1 = domain_pair[0]
-            d2 = domain_pair[1]
-            key = '_'.join(domain_pair)
-            value = str(row[d1]) + '_' + str(row[d2])
-            if value not in valid_values_dict[key]:
-                flag = False
-        return flag
-
-    target_df['valid'] = target_df.parallel_apply(aux_check, axis=1, args=(domain_pairs,))
-    target_df = target_df.loc[target_df['valid'] == True]
-    del target_df['valid']
-    print(' Post check length of test set::', len(target_df))
-    return target_df
-
 
 def perturb_row(
         row,
@@ -201,10 +149,11 @@ def generate_anomalies(
 
 
 def main():
-    global DAT_SOURCE
+    global DATA_SOURCE
     global domain_dims
     global save_dir
     global anom_perturb_count
+    global TOTAL_ANOM_PERC
 
     target_edges = get_positive_edges()
     actor_columns = ['ConsigneePanjivaID', 'ShipperPanjivaID']
@@ -216,6 +165,10 @@ def main():
     test_df = pd.read_csv(os.path.join(DATA_SOURCE, 'test_data.csv'), low_memory=False)
     test_df = test_df.drop_duplicates(list(domain_dims.keys()))
 
+
+    # ------------------------------------------------------------------------------------
+    # spurious co-occurrence to be removed from data that is supposed to be non-anomalous
+    # ------------------------------------------------------------------------------------
     cleaned_test_df: object = remove_spurious_coOcc(
         test_df,
         train_df,
@@ -225,57 +178,56 @@ def main():
     # Select some records that should be used  to generate anomalies
     # -----------------------------------------------------------------
 
-
-    def fetch_matches(row, df):
-        row = row.to_dict()
-        match =  df.loc[(df[CONSIGNEE_column]==row[CONSIGNEE_column]) & (df[SHIPPER_column]==row[SHIPPER_column])]
-        print(len(match))
-        return match
-
-    matches = Parallel(n_jobs=mp.cpu_count())(
-        delayed(fetch_matches)(
-            row, cleaned_test_df) for i,row in tqdm(target_edges.iterrows(), total=target_edges.shape[0])
-    )
     record_count = 0
     positive_samples = None
+    sampling_DF = test_df.copy()
+    sampling_DF = sampling_DF.append(train_df,ignore_index=True)
     for pair in zip(target_edges['ConsigneePanjivaID'].values, target_edges['ShipperPanjivaID'].values):
         _C = int(pair[0])
         _S = int(pair[1])
-        tmp = cleaned_test_df.loc[(cleaned_test_df['ConsigneePanjivaID'] == _C) &
-                                (cleaned_test_df['ShipperPanjivaID'] == _S)]
+        # -------------------------
+        # use test_df - without removing spurious co-occurrences. Since we are going to perturb it anyway
+        # -------------------------
+        tmp = sampling_DF.loc[(sampling_DF['ConsigneePanjivaID'] == _C) &
+                                (sampling_DF['ShipperPanjivaID'] == _S)]
         record_count += len(tmp)
         if positive_samples is None:
             positive_samples = pd.DataFrame(tmp)
         else:
             positive_samples = positive_samples.append(tmp, ignore_index=True)
 
+    positive_sample_ID_list = positive_samples[id_col].values.tolist()
 
-    print(record_count, len(cleaned_test_df), record_count/len(cleaned_test_df))
-    print(' >> ', len(positive_samples))
+    if TOTAL_ANOM_PERC != -1:
+        count = int(TOTAL_ANOM_PERC * len(cleaned_test_df) / 100)
+        if len(positive_samples) <  count:
+            _replace =  True
+        else:
+            _replace = False
+        positive_samples = positive_samples.sample(n=count,replace=_replace)
+        positive_samples = positive_samples.reset_index(drop=True)
 
-    # positive_samples = None
-    # for m in matches:
-    #     if positive_samples is None:
-    #         positive_samples = pd.DataFrame(m)
-    #     else:
-    #         positive_samples = positive_samples.append(m,ignore_index=True)
+        # Ensure that ids are different
+        positive_samples['serial_id'] = np.arange(positive_samples.shape[0])
+        positive_samples[id_col] = positive_samples.apply(lambda x: int(str(x[id_col]) + '00'+ str(x['serial_id'])))
+        del positive_samples['serial_id']
 
-    # positive_samples = cleaned_records.loc[
-    #     (cleaned_records['ConsigneePanjivaID'].isin(actor_pos_nodes_dict['ConsigneePanjivaID'])) | (
-    #         cleaned_records['ShipperPanjivaID'].isin(actor_pos_nodes_dict['ShipperPanjivaID']))]
     num_positive_samples = len(positive_samples)
+    print(' >> ', num_positive_samples)
 
     set_consignee = target_edges[CONSIGNEE_column]
     set_shipper = target_edges[SHIPPER_column]
-    candidates = cleaned_test_df.loc[
-        ~(cleaned_test_df['ConsigneePanjivaID'].isin(set_consignee)) & ~(
-            cleaned_test_df['ShipperPanjivaID'].isin(set_shipper))
+    candidates = test_df.loc[
+        ~(test_df['ConsigneePanjivaID'].isin(set_consignee)) | ~(
+            test_df['ShipperPanjivaID'].isin(set_shipper))
     ]
+    print('Count of candidates for negative samples ', len(candidates))
     negative_samples = candidates.sample(num_positive_samples)
 
     print('Print # positive, negative samples', num_positive_samples, len(negative_samples))
-    pos_neg_IDs = list(negative_samples[id_col].values) + list(positive_samples[id_col].values)
+    pos_neg_IDs = negative_samples[id_col].values.tolist() + positive_sample_ID_list
 
+    # -------------------------------------------
     ref_df = train_df.copy()
     negative_samples = generate_anomalies(
         negative_samples,
@@ -292,7 +244,8 @@ def main():
         domain_dims,
         anom_perturb_count
     )
-    positive_samples[id_col] = positive_samples[id_col].apply(lambda x: int(str(x) + str(1002)))
+
+    # positive_samples[id_col] = positive_samples[id_col].apply(lambda x: int(str(x) + str(1002)))
     normal_samples = cleaned_test_df.loc[~(cleaned_test_df[id_col].isin(pos_neg_IDs))]
 
     # ========================================
@@ -302,15 +255,12 @@ def main():
     # Normal samples
     save_path = os.path.join(save_dir, 'test_normal_data.csv')
     normal_samples.to_csv(save_path, index=None)
-
     # Positive samples
     save_path = os.path.join(save_dir, 'test_pos_data.csv')
     positive_samples.to_csv(save_path, index=None)
-
     # Negative samples
     save_path = os.path.join(save_dir, 'test_neg_data.csv')
     negative_samples.to_csv(save_path, index=None)
-
     # # Save all the cleaned records
     # save_path = os.path.join(save_dir, 'cleaned_test_data.csv')
 
@@ -327,8 +277,19 @@ parser.add_argument(
     type=int,
     default=4
 )
+
+parser.add_argument(
+    '--total_anom_perc',
+    type=float,
+    default=1.5
+)
+
+# --------------------------------------------------------------------------
 args = parser.parse_args()
 DIR = args.DIR
 anom_perturb_count = args.anom_perturb_count
+TOTAL_ANOM_PERC = args.total_anom_perc
 set_up_config(DIR)
 main()
+
+
