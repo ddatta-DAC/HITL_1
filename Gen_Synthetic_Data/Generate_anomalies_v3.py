@@ -219,14 +219,28 @@ def main():
     set_consignee = target_edges[CONSIGNEE_column]
     set_shipper = target_edges[SHIPPER_column]
 
-    candidates = sampling_DF.loc[
+    # ------------------------------
+    # For negative samples :
+    # have negative samples which have neither of the actors
+    # and also one of the marked entities.
+    # ------------------------------
+
+    candidates_N_1 = sampling_DF.loc[
         (sampling_DF['ConsigneePanjivaID'].isin(set_consignee)) | (
             sampling_DF['ShipperPanjivaID'].isin(set_shipper))
     ]
-    candidates = candidates.loc[~(candidates[id_col].isin(positive_sample_ID_list))]
-
-    print('Count of candidates for negative samples ', len(candidates))
-    negative_samples = candidates.sample(num_positive_samples)
+    candidates_N_1 = candidates_N_1.loc[~(candidates_N_1[id_col].isin(positive_sample_ID_list))]
+    candidates_N_2 = sampling_DF.loc[
+        ~(sampling_DF['ConsigneePanjivaID'].isin(set_consignee)) & ~(
+            sampling_DF['ShipperPanjivaID'].isin(set_shipper))
+        ]
+    candidates_N_2 = candidates_N_2.loc[~(candidates_N_2[id_col].isin(positive_sample_ID_list))]
+    candidates_N_1 = candidates_N_1.sample(num_positive_samples// 2)
+    candidates_N_2 = candidates_N_2.sample(num_positive_samples// 2)
+    candidates_N = candidates_N_1.append(candidates_N_2, ignore_index=True)
+    candidates_N = candidates_N.drop_duplicates(subset=[id_col])
+    print('Count of candidates for negative samples ', len(candidates_N))
+    negative_samples = candidates_N.sample(frac=1)
 
     print('Print # positive, negative samples', num_positive_samples, len(negative_samples))
     pos_neg_IDs = negative_samples[id_col].values.tolist() + positive_sample_ID_list
@@ -249,8 +263,14 @@ def main():
         anom_perturb_count
     )
 
-    # positive_samples[id_col] = positive_samples[id_col].apply(lambda x: int(str(x) + str(1002)))
+    # -------------------------
+    # These samples have no anomalies
+    # -------------------------
     normal_samples = cleaned_test_df.loc[~(cleaned_test_df[id_col].isin(pos_neg_IDs))]
+    normal_samples = cleaned_test_df.loc[~(
+            (normal_samples['ConsigneePanjivaID'].isin(set_consignee)) &
+            (normal_samples['ShipperPanjivaID'].isin(set_shipper))
+    )]
 
     # ========================================
     # Save the data to csv file

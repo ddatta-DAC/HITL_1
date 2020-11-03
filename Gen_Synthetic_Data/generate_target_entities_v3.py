@@ -36,9 +36,9 @@ freq_bound = None
 attribute_columns = None
 DIR = None
 CUT_OFF = None
-ANOM_PERC_LB = 1.00
+ANOM_PERC_LB = 0.50
 ANOM_PERC_UB = 5.00
-MAX_CLUSTERS = 10
+MAX_CLUSTERS = 5
 
 
 def set_up_config(_DIR=None):
@@ -230,9 +230,9 @@ def main_process():
     while FOUND == False:
         edges = generate_edge_clusters(
             B,
-            max_pairs=30,
-            grow_size=3,
-            grow_steps=5,
+            max_pairs=20,
+            grow_size=4,
+            grow_steps=10,
             min_size=8
         )
         ref_df = df_test.copy()
@@ -256,8 +256,9 @@ def main_process():
         for i in nx.connected_components(subgraph):
             print(len(i))
             num_components += 1
-        if num_components > MAX_CLUSTERS:
+        if num_components == 0 or num_components > MAX_CLUSTERS:
             FOUND = False
+
 
         try:
             pos = nx.spring_layout(subgraph)
@@ -286,13 +287,8 @@ def main_process():
     print('Result dataframe, with edge list', len(result_df))
 
     # Save the results
-    f_path = os.path.join(
-        save_dir,
-        'seed_edges.csv'
-    )
-    result_df.to_csv(f_path,
-                     index=None)
-
+    f_path = os.path.join(save_dir,'seed_edges.csv')
+    result_df.to_csv(f_path,index=None)
     return result_df
 
 
