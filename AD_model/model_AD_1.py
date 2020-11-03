@@ -64,15 +64,18 @@ class AD_model_container():
 
     def __init__(self, entity_count, emb_dim, device ):
         self.model = AD ( entity_count, emb_dim, device)
-        self.model.to(device)
         self.device = device
+        print('Device', self.device)
+        self.model.to(self.device)
+        
         self.entity_count = entity_count
         self.emb_dim = emb_dim
         self.signature = 'model_{}_{}'.format(entity_count,int(time()))
+        self.save_path = None
         return
 
     def train_model(self, train_x_pos, train_x_neg, batch_size = 512, epochs = 10, log_interval=100):
-        self.model.mode='train'
+        self.model.mode = 'train'
         bs = batch_size
         opt = torch.optim.Adam( list(self.model.parameters()) )
         num_batches = train_x_pos.shape[0] // bs + 1
@@ -107,14 +110,17 @@ class AD_model_container():
         self.model.mode = 'test'
         return
 
-    def score_samples(self,x_test):
+    def score_samples(self, x_test):
         bs = 507
         results = []
+        print(type(x_test), x_test.shape)
         num_batches = x_test.shape[0] // bs + 1
         idx = np.arange(x_test.shape[0])
         for b in range(num_batches):
             b_idx = idx[b * bs:(b + 1) * bs]
-            if len(b_idx)==0: break
+            if len(b_idx)==0 : 
+                break
+            print(' >> ',x_test[b_idx])
             x = LT(x_test[b_idx]).to(self.device)
             score_values = self.model(x)
             vals = score_values.cpu().data.numpy().tolist()
@@ -135,10 +141,13 @@ class AD_model_container():
         if self.save_path is None and path is None:
             print('Error . Null path given to load model ')
             return None
+        print('Device', self.device)
         if path is None:
             path = self.save_path
-        self.model = AD( emb_dim=self.emb_dim, num_entities=self.entity_count)
+        self.model = AD( emb_dim=self.emb_dim, num_entities=self.entity_count,device=self.device)
+        
         self.model.load_state_dict(torch.load(path))
+        self.model.to(self.device)
         self.model.eval()
         return
 # data_p = np.array([[1,2,3],[9,7,3]])
