@@ -48,7 +48,8 @@ print('Post dropping duplicates, size of train set', len(train_df))
 test_df = pd.read_csv(os.path.join(save_dir_stage_1, 'test_data.csv'), index_col=None)
 train_df = utils.convert_to_serializedID_format(train_df,DIR)
 test_df = utils.convert_to_serializedID_format(test_df, DIR)
-
+# Save the train data
+train_df.to_csv(os.path.join(save_dir_stage_2,'train_data_serialized.csv'), index=None)
 # ---------------------
 # Save test data
 # ---------------------
@@ -63,6 +64,7 @@ attributes = list(train_df.columns)
 attributes.remove(ID_COL)
 train_df = train_df.drop_duplicates(subset=attributes)
 print('Post dropping duplicates, size of train set', len(train_df))
+
 x_pos, x_neg = utils.generate_negative_samples(train_df, DIR, num_neg_samples=10)
 # Save training data
 np.save(os.path.join(save_dir_stage_2,'train_x_pos.npy'),x_pos)
