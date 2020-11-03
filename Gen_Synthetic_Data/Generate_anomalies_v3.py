@@ -218,9 +218,10 @@ def main():
 
     set_consignee = target_edges[CONSIGNEE_column]
     set_shipper = target_edges[SHIPPER_column]
-    candidates = test_df.loc[
-        (test_df['ConsigneePanjivaID'].isin(set_consignee)) & (
-            test_df['ShipperPanjivaID'].isin(set_shipper))
+
+    candidates = sampling_DF.loc[
+        (sampling_DF['ConsigneePanjivaID'].isin(set_consignee)) | (
+            sampling_DF['ShipperPanjivaID'].isin(set_shipper))
     ]
     candidates = candidates.loc[~(candidates[id_col].isin(positive_sample_ID_list))]
 
