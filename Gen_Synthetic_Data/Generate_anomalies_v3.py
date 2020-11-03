@@ -154,6 +154,7 @@ def main():
     global save_dir
     global anom_perturb_count
     global TOTAL_ANOM_PERC
+    global id_col
 
     target_edges = get_positive_edges()
     actor_columns = ['ConsigneePanjivaID', 'ShipperPanjivaID']
@@ -218,9 +219,11 @@ def main():
     set_consignee = target_edges[CONSIGNEE_column]
     set_shipper = target_edges[SHIPPER_column]
     candidates = test_df.loc[
-        ~(test_df['ConsigneePanjivaID'].isin(set_consignee)) | ~(
+        (test_df['ConsigneePanjivaID'].isin(set_consignee)) & (
             test_df['ShipperPanjivaID'].isin(set_shipper))
     ]
+    candidates = candidates.loc[~(candidates[id_col].isin(positive_sample_ID_list))]
+
     print('Count of candidates for negative samples ', len(candidates))
     negative_samples = candidates.sample(num_positive_samples)
 

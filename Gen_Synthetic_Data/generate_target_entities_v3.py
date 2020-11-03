@@ -260,7 +260,6 @@ def main_process():
             FOUND = False
 
         try:
-
             pos = nx.spring_layout(subgraph)
             nx.draw(subgraph, pos, node_size=100, cmap=plt.cm.Blues)
             plt.show()
@@ -287,8 +286,12 @@ def main_process():
     print('Result dataframe, with edge list', len(result_df))
 
     # Save the results
-    f_path = os.path.join(save_dir, 'seed_edges.csv')
-    result_df.to_csv(f_path, index=None)
+    f_path = os.path.join(
+        save_dir,
+        'seed_edges.csv'
+    )
+    result_df.to_csv(f_path,
+                     index=None)
 
     return result_df
 
