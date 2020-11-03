@@ -170,7 +170,7 @@ def main():
     # spurious co-occurrence to be removed from data that is supposed to be non-anomalous
     # ------------------------------------------------------------------------------------
     cleaned_test_df: object = remove_spurious_coOcc(
-        test_df,
+        test_df.copy(),
         train_df,
         domain_dims
     )

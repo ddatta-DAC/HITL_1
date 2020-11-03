@@ -144,6 +144,7 @@ def remove_spurious_coOcc(
     # create a hash
     # =========================================
     print(len(target_df))
+    target_df = target_df.copy()
     domains = [_ for _ in domain_dims.keys() if _ not in actor_columns]
     domain_pairs = [sorted(a) for a in combinations(domains, 2)]
 
@@ -171,5 +172,6 @@ def remove_spurious_coOcc(
     target_df['valid'] = target_df.parallel_apply(aux_check, axis=1, args=(domain_pairs,))
     target_df = target_df.loc[target_df['valid'] == True]
     del target_df['valid']
-    print(' Post check length of test set::', len(target_df))
+    print(' Post check length of target dataframe ::', len(target_df))
+    print(' Post check columns in target dataframe ::', target_df.columns)
     return target_df
