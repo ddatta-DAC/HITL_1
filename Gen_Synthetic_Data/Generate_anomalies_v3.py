@@ -267,10 +267,9 @@ def main():
     # These samples have no anomalies
     # -------------------------
     normal_samples = cleaned_test_df.loc[~(cleaned_test_df[id_col].isin(pos_neg_IDs))]
-    normal_samples = cleaned_test_df.loc[~(
-            (normal_samples['ConsigneePanjivaID'].isin(set_consignee)) &
-            (normal_samples['ShipperPanjivaID'].isin(set_shipper))
-    )]
+    normal_samples = cleaned_test_df.loc[
+            ~(normal_samples['ConsigneePanjivaID'].isin(set_consignee)) &
+            ~(normal_samples['ShipperPanjivaID'].isin(set_shipper))]
 
     # ========================================
     # Save the data to csv file
