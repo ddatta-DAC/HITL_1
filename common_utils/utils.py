@@ -110,15 +110,23 @@ def convert_to_serializedID_format(
         # Save the idMapper
         idMapping_df.to_csv(idMapper_file, index=False)
 
+    # Create a dictionary for Quick access
+    mapping_dict = {}
+    for domain in set(idMapping_df['domain']):
+
+        tmp =  idMapping_df.loc[(idMapping_df['domain'] == domain)]
+        serial_id = tmp['serial_id'].values.tolist()
+        entity_id = tmp['entity_id'].values.tolist()
+        mapping_dict[domain] = {k:v for k,v in zip(entity_id,serial_id)}
     # Convert
     def convert_aux(val, domain):
-        return \
-        idMapping_df.loc[(idMapping_df['domain'] == domain) & (idMapping_df['entity_id'] == val)]['serial_id'].values[0]
+        return mapping_dict[domain][val]
+        # idMapping_df.loc[(idMapping_df['domain'] == domain) & (idMapping_df['entity_id'] == val)]['serial_id'].values[0]
 
     for domain in tqdm(list(domain_dims.keys())):
         target_df[domain] = target_df[domain].parallel_apply(convert_aux, args=(domain,))
-    return target_df
 
+    return target_df
 
 
 def fetch_idMappingFile(DIR):
@@ -139,6 +147,7 @@ def remove_spurious_coOcc(
         domain_dims,
         actor_columns=['ConsigneePanjvaID', 'ShipperPanjivaID'],
 ):
+
     id_col = 'PanjivaRecordID'
     # =========================================
     # create a hash
