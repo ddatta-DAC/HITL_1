@@ -8,13 +8,10 @@ import numpy as np
 import pandas as pd
 import os
 import sys
-
 sys.path.append('./..')
 sys.path.append('./../..')
 import pickle
 import numpy as np
-
-
 # ================================
 
 def read_in_AD_result(DIR, normalize_scores=True, anomalies_score_high=True):
