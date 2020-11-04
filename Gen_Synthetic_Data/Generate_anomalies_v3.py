@@ -205,7 +205,7 @@ def main():
             _replace =  True
         else:
             _replace = False
-        positive_samples = positive_samples.sample(n=count,replace=_replace)
+        positive_samples = positive_samples.sample(n=count, replace=_replace)
         positive_samples = positive_samples.reset_index(drop=True)
 
         # Ensure that ids are different
