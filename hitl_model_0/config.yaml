@@ -1,0 +1,6 @@
+DIR : 'us_import1'
+ANOMALY_PERCENTILE_THRESHOLD: 95
+UPDATE_scoreUB_percentile: 10 
+ID_COL : 'PanjivaRecordID'
+attribute_SHIPPER: 'ShipperPanjivaID'
+attribute_CONSIGNEE: 'ConsigneePanjivaID'
