@@ -273,19 +273,20 @@ for k in range(MAX_ANOM_LABELS):
     c = c + 1
 
 fig, axs = plt.subplots(r + 1, c, figsize=(5 * num_cols, 5 * (r + 1)))
-for k in range(1, MAX_ANOM_LABELS + 1, 1):
+for k in range(0, MAX_ANOM_LABELS , 1):
     p0, p1, p2 = results[k]
     p0 = list(p0)
-    p1 = list(p0)
+    p1 = list(p1)
     p2 = list(p2)
     x = list(x)
     _r = plot_idx[k][0]
     _c = plot_idx[k][1]
-    axs[_r, _c].plot(x, p2, 'r', marker='*', label='Proposed')
-    axs[_r, _c].plot(x, p1, 'b', marker='o', label='white(black)-list')
     axs[_r, _c].plot(x, p0, 'k', marker='p', label='no-input')
+    axs[_r, _c].plot(x, p1, 'b', marker='o', label='white(black)-list')
+    axs[_r, _c].plot(x, p2, 'r', marker='*', label='Proposed')
+
     axs[_r, _c].legend(fontsize=14)
-    axs[_r, _c].set_title('K={} records marked positive'.format(k), fontsize=14)
+    axs[_r, _c].set_title('K={} records marked positive'.format(k+1), fontsize=14)
 
 for ax in axs.flat:
     ax.set(xlabel='Next records', ylabel='Precision')
