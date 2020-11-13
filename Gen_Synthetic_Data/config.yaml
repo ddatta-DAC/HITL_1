@@ -51,10 +51,38 @@
     - PortOfUnlading
     - PortOfLading
     - HSCode
-    - VolumeTEU
-    - Quantity
-    - WeightKg
-    - ValueOfGoodsUSD
+  'column_value_filters':
+    'Carrier':
+      - '(Usa))'
+  'low_freq_bound': 5
+
+'us_import4':
+  'use_cols':
+    - PanjivaRecordID
+    - ConsigneePanjivaID
+    - ShipperPanjivaID
+    - Carrier
+    - ShipmentOrigin
+    - ShipmentDestination
+    - PortOfUnlading
+    - PortOfLading
+    - HSCode
+  'column_value_filters':
+    'Carrier':
+      - '(Usa))'
+  'low_freq_bound': 5
+
+'us_import5':
+  'use_cols':
+    - PanjivaRecordID
+    - ConsigneePanjivaID
+    - ShipperPanjivaID
+    - Carrier
+    - ShipmentOrigin
+    - ShipmentDestination
+    - PortOfUnlading
+    - PortOfLading
+    - HSCode
   'column_value_filters':
     'Carrier':
       - '(Usa))'
