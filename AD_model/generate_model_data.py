@@ -15,14 +15,14 @@ import numpy as np
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--DIR', choices=['us_import1', 'us_import2', 'us_import3'],
-    default='us_import1'
+    default=None
 )
 
 args = parser.parse_args()
 DIR = args.DIR
 
-save_dir_stage_1 = './../generated_data_v1/us_import1'
-save_dir_stage_2 = './../generated_data_v1/us_import1/stage_2'
+save_dir_stage_1 = './../generated_data_v1/{}'.format(DIR)
+save_dir_stage_2 = './../generated_data_v1/{}/stage_2'.format(DIR)
 
 # -------------------------------------
 
