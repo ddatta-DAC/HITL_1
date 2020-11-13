@@ -1,3 +1,5 @@
+import os
+import faiss
 import numpy as np
 import pandas as pd
 import os
