@@ -392,5 +392,7 @@ def main():
         file_path = os.path.join(SAVE_LOC, file_name)
         np.save( file_path, x)
     return gnn_features
+
+
 main()
 
