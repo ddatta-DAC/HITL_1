@@ -41,7 +41,7 @@ def main(DIR, saved_model):
     model = AD.AD_model_container(total_entity_count, emb_dim=16, device=device)
     if saved_model is None:
         model.train_model(x_pos,x_neg, batch_size=128, epochs=50)
-        model.save_model('saved_model/us_import1')
+        model.save_model('saved_model/{}'.format(DIR))
     else:
         saved_model_path = os.path.join('./saved_model/{}/{}'.format(DIR, saved_model))
         model.load_model(saved_model_path)
