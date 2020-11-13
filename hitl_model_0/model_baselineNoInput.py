@@ -40,4 +40,4 @@ def main_process(
         top_k_target = orig_target_df.head(k)
         p = len(top_k_target.loc[top_k_target['label'] == 1]) / k
         precision.append(p)
-    return precision,
+    return precision
