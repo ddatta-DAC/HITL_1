@@ -279,6 +279,9 @@ for k in range(0, MAX_ANOM_LABELS , 1):
     p1 = list(p1)
     p2 = list(p2)
     x = list(x)
+    print(p0,p1,p2)
+    print(len(p0))
+    print(x)
     _r = plot_idx[k][0]
     _c = plot_idx[k][1]
     axs[_r, _c].plot(x, p0, 'k', marker='p', label='no-input')
