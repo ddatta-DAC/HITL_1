@@ -6,3 +6,17 @@ attribute_SHIPPER: 'ShipperPanjivaID'
 attribute_CONSIGNEE: 'ConsigneePanjivaID'
 DATA_LOC : './../generated_data_v1'
 NEG_PERCENTILE_THRESHOLD: 50
+assumed_normal_entity_minCount: 5
+assumed_normal_score_threshold: 60
+KNN-K : 5
+MAX_ANOM_LABELS : 15
+precision_check_points:
+  - 25
+  - 50
+  - 75
+  - 100
+  - 125
+  - 150
+  - 200
+  - 225
+  - 250

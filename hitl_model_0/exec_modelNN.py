@@ -24,9 +24,9 @@ import argparse
 from common_utils import utils
 
 try:
-    import .model_NN_1 as model_NN_1
-    import .model_baselineNoInput as model_baselineNoInput
-    import .model_baselineNoInput as model_baselineNoInput
+    import model_NN_1 as model_NN_1
+    import model_baselineNoInput as model_baselineNoInput
+    import model_baselineWBListing as model_baselineWBListing
 except:
     from . import model_NN_1
     from . import model_baselineNoInput
