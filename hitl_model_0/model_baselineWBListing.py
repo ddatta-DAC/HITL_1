@@ -92,6 +92,7 @@ def main_process(
         tmp = new_df.head(k)
         correct = tmp.loc[tmp['label'] == 1]
         prec = len(correct) / len(tmp)
-        print('precision at next top {:3d} : {:.3f}'.format(k, prec))
+        # print('precision at next top {:3d} : {:.3f}'.format(k, prec))
         precision.append(prec)
+
     return precision

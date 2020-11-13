@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import os
 # --------------------------------
-
 def main_process(
         df_cur,
         label_top_k,
