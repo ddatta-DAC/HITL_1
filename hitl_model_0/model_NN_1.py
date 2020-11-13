@@ -10,9 +10,9 @@ def get_index_object(emb_array):
     print('Building FAISS index. Index trained ? ', index.is_trained)
     index.add(emb_array.astype(np.float32))
     print(' Size of index ::', index.ntotal)
-    return object
+    return index
 
-
+# -------------------------------------
 def main_process(
         df_cur,
         label_top_k,
