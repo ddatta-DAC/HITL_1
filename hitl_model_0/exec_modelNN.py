@@ -3,7 +3,9 @@
 import pandas as pd
 import torch
 import os
-import sklearn
+import glob
+import yaml
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import math
@@ -11,22 +13,24 @@ import math
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 import sys
 from tqdm import tqdm
-
 sys.path.append('./..')
 sys.path.append('./../..')
 from pandarallel import pandarallel
-
 pandarallel.initialize()
-import glob
-import yaml
-import pickle
+
 from scipy.special import softmax as SOFTMAX
 import matplotlib.pyplot as plt
 import argparse
 from common_utils import utils
-from . import model_NN_1
-from . import model_baselineNoInput
-from . import model_baselineWBListing
+
+try:
+    import .model_NN_1 as model_NN_1
+    import .model_baselineNoInput as model_baselineNoInput
+    import .model_baselineNoInput as model_baselineNoInput
+except:
+    from . import model_NN_1
+    from . import model_baselineNoInput
+    from . import model_baselineWBListing
 
 try:
     from common_utils import AD_result_fetcher
