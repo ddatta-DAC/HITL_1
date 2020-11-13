@@ -275,9 +275,7 @@ for k in range(MAX_ANOM_LABELS):
 fig, axs = plt.subplots(r + 1, c, figsize=(5 * num_cols, 5 * (r + 1)))
 for k in range(0, MAX_ANOM_LABELS , 1):
     p0, p1, p2 = results[k]
-    p0 = list(p0)
-    p1 = list(p1)
-    p2 = list(p2)
+
     x = list(x)
     print(p0,p1,p2)
     print(len(p0))
