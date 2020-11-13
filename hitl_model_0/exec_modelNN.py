@@ -222,7 +222,7 @@ white_list_entities = get_whiteListedEntities(
 # Run the models
 # ============================================================================
 df_cur = working_df.copy()
-res = []
+results = []
 for k in range(1, MAX_ANOM_LABELS + 1, 1):
     print(' ----------------- ')
     print('labelling {} positive entities and checking ...'.format(k))
@@ -253,7 +253,7 @@ for k in range(1, MAX_ANOM_LABELS + 1, 1):
         attr_consignee=attr_consignee,
         attr_shipper=attr_shipper
     )
-    res.append((p1, p2, p0))
+    results.append([p0, p1, p2])
 
 '''
  Cant plot in all cases !
@@ -274,7 +274,11 @@ for k in range(MAX_ANOM_LABELS):
 
 fig, axs = plt.subplots(r + 1, c, figsize=(5 * num_cols, 5 * (r + 1)))
 for k in range(1, MAX_ANOM_LABELS + 1, 1):
-    p1, p2, p0 = res[k]
+    p0, p1, p2 = results[k]
+    p0 = list(p0)
+    p1 = list(p0)
+    p2 = list(p2)
+    x = list(x.reshape(-1))
     _r = plot_idx[k][0]
     _c = plot_idx[k][1]
     axs[_r, _c].plot(x, p2, 'r', marker='*', label='Proposed')
