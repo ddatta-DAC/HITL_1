@@ -4,3 +4,5 @@ UPDATE_scoreUB_percentile: 10
 ID_COL : 'PanjivaRecordID'
 attribute_SHIPPER: 'ShipperPanjivaID'
 attribute_CONSIGNEE: 'ConsigneePanjivaID'
+DATA_LOC : './../generated_data_v1'
+NEG_PERCENTILE_THRESHOLD: 50
