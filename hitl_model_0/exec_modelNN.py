@@ -278,7 +278,7 @@ for k in range(1, MAX_ANOM_LABELS + 1, 1):
     p0 = list(p0)
     p1 = list(p0)
     p2 = list(p2)
-    x = list(x.reshape(-1))
+    x = list(x)
     _r = plot_idx[k][0]
     _c = plot_idx[k][1]
     axs[_r, _c].plot(x, p2, 'r', marker='*', label='Proposed')
