@@ -9,7 +9,7 @@ def main_process(
         anomaly_perc_threshold,
         white_list_entities,
         ID_COL='PanjivaRecordID',
-        attr_consignee='ConsigneeRecordID',
+        attr_consignee='ConsigneePanjivaID',
         attr_shipper='ShipperPanjivaID'
 ):
 
