@@ -12,7 +12,7 @@ sys.path.append('../../..')
 sys.path.append('../..')
 import pandas as pd
 try:
-    import utils
+    from .common_utils import utils
 except:
     from common_utils import utils
 import numpy as np
