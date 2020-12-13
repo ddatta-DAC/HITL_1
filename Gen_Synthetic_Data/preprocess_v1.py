@@ -16,8 +16,12 @@ import yaml
 from collections import Counter
 import pickle
 
-VALID_HSCODE_LIST = ['9401', '9403', '9201', '9614', '9202', '9302', '9304', '0305', '8211', '6602', '8201', '9207',
-                     '9504', '9205', '9206', '9209', '9202']
+VALID_HSCODE_LIST = [
+    '9401', '9403', '9201', '9614', '9202', 
+    '9302', '9304', '0305', '8211', '6602', 
+    '8201', '9207', '9504', '9205', '9206',
+    '9209', '9202']
+
 CONFIG = None
 DIR_LOC = None
 CONFIG = None
@@ -85,21 +89,33 @@ def get_regex(_type):
     global DIR
     if DIR == 'us_import1':
         if _type == 'train':
-            return '.*0[1-3]_2015.csv'
+            return '.*0[1-4]_2015.csv'
         if _type == 'test':
-            return '.*0[4-6]_2015.csv'
+            return '.*0[5-6]_2015.csv'
 
     if DIR == 'us_import2':
         if _type == 'train':
-            return '.*0[1-6]_2016.csv'
+            return '.*0[4-7]_2015.csv'
         if _type == 'test':
-            return '.*0[7-9]_2016.csv'
+            return '.*0[8-9]_2015.csv'
 
     if DIR == 'us_import3':
         if _type == 'train':
-            return '.*0[1-6]_2016.csv'
+            return '.*0[1-3]_2016.csv'
+        if _type == 'test':
+            return '.*0[4-6]_2016.csv'
+        
+    if DIR == 'us_import4':
+        if _type == 'train':
+            return '.*0[4-6]_2016.csv'
         if _type == 'test':
             return '.*0[7-9]_2016.csv'
+    
+    if DIR == 'us_import5':
+        if _type == 'train':
+            return '.*0[1-3]_2017.csv'
+        if _type == 'test':
+            return '.*0[4-6]_2017.csv'
     return '*.csv'
 
 
@@ -108,6 +124,7 @@ def get_files(DIR, _type='all'):
     data_dir = DATA_SOURCE
 
     regex = get_regex(_type)
+    print(regex)
     c = glob.glob(os.path.join(data_dir, '*'))
 
     def glob_re(pattern, strings):
@@ -189,7 +206,7 @@ def HSCode_filter_aux(val):
     if val[:2] == '44':
         return val
     elif val[:4] in VALID_HSCODE_LIST:
-        return val
+        return str(val[:6])
     else:
         return None
 
@@ -347,7 +364,7 @@ def setup_testing_data(
             )
         )
     test_df = test_df.dropna()
-    test_df = test_df.drop_duplicates()
+    test_df = test_df.drop_duplicates(subset=attribute_columns)
     test_df = order_cols(test_df)
 
     print(' Length of testing data', len(test_df))
@@ -362,7 +379,8 @@ def create_train_test_sets():
     global column_value_filters
     global CONFIG
     global DIR_LOC
-
+    global attribute_columns
+    
     train_df_file = os.path.join(save_dir, 'train_data.csv')
     test_df_file = os.path.join(save_dir, 'test_data.csv')
     column_valuesId_dict_file = 'column_valuesId_dict.pkl'
@@ -387,7 +405,8 @@ def create_train_test_sets():
         train_df,
         save_dir
     )
-
+    
+    train_df = train_df.drop_duplicates(subset=attribute_columns)
     print('Length of train data ', len(train_df))
     train_df = order_cols(train_df)
 
@@ -441,8 +460,8 @@ def create_train_test_sets():
 # ================================= #
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '--DIR', choices=['us_import1', 'us_import2', 'us_import3' ],
-    default= 'us_import1'
+    '--DIR', choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5' ],
+    default= None
 )
 
 args = parser.parse_args()
