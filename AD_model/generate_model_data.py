@@ -9,7 +9,7 @@ import argparse
 import os
 import sys
 sys.path.append('../../..')
-sys.path.append('../..')
+sys.path.append('./..')
 import pandas as pd
 try:
     from .common_utils import utils
@@ -54,3 +54,18 @@ test_normal_df = utils.convert_to_serializedID_format(test_normal_df,DIR)
 test_normal_df = test_normal_df.drop_duplicates(subset=attributes)
 print('Post dropping duplicates, size of test set', len(test_normal_df))
 test_normal_df.to_csv(os.path.join(save_dir_stage_2,'test_serialized.csv'),index=None)
+
+
+# --------------------------------------
+# The id s in the files are already serialized
+# --------------------------------------
+test_pos_fpath = os.path.join( './../generated_data_v1/{}/stage_2/test_pos_serialized.csv'.format(DIR)) 
+test_neg_fpath = os.path.join( './../generated_data_v1/{}/stage_2/test_neg_serialized.csv'.format(DIR)) 
+
+src_path = './../generated_data_v1/genearted_anomalies/{}'.format(DIR)
+anom_pos_df = pd.read_csv(os.path.join(src_path, 'pos_anomalies.csv' ), index_col=None)
+anom_pos_df = pd.read_csv(os.path.join(src_path, 'neg_anomalies.csv' ), index_col=None)
+# simple sanity check!
+print('Positive anomalies :: ', len(anom_pos_df))
+print('Negative anomalies :: ', len(anom_neg_df))
+

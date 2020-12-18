@@ -48,7 +48,7 @@ def main(DIR, saved_model):
 
     model.model.mode='test'
     test_df = pd.read_csv(
-        './../generated_data_v1/{}/stage_2/test_normal_serialized.csv'.format(DIR),
+        './../generated_data_v1/{}/stage_2/test_serialized.csv'.format(DIR),
         index_col=None
     )
 
@@ -61,7 +61,9 @@ def main(DIR, saved_model):
 
     # -------------------------------------------------
     # Positive anomalies
-    test_df_p = pd.read_csv( './../generated_data_v1/{}/stage_2/test_pos_serialized.csv'.format(DIR), index_col=None )
+
+    anomalies_src_path = './../generated_data_v1/generated_anomalies/{}'.format(DIR)
+    test_df_p = pd.read_csv(os.path.join(anomalies_src_path, 'pos_anomalies.csv' ), index_col=None)
     id_list_p = test_df_p[ID_COL].values.tolist()
     del test_df_p[ID_COL]
     test_xp = test_df_p.values
@@ -69,8 +71,8 @@ def main(DIR, saved_model):
 
     # -------------------------------------------------
     # Negative anomalies
-
-    test_df_n = pd.read_csv( './../generated_data_v1/{}/stage_2/test_neg_serialized.csv'.format(DIR), index_col=None )
+    
+    test_df_n = pd.read_csv(os.path.join(anomalies_src_path, 'neg_anomalies.csv' ), index_col=None)
     id_list_n = test_df_n[ID_COL].values.tolist()
     del test_df_n[ID_COL]
     test_xn = test_df_n.values
