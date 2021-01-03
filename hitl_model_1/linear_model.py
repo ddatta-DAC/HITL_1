@@ -10,12 +10,14 @@ from torch import FloatTensor as FT
 from torch.nn import functional as F
 
 
-class linearClassifier(nn.Module, TransformerMixin):
+class linearClassifier(
+    nn.Module,
+    TransformerMixin
+):
     def __init__(
             self, num_domains, emb_dim, LR=0.001, num_epochs=250, batch_size=32
     ):
         super(linearClassifier, self).__init__()
-
         self.emb_dim = emb_dim
         self.K = int(num_domains * (num_domains - 1) / 2)
         self.num_domains = num_domains
@@ -27,19 +29,26 @@ class linearClassifier(nn.Module, TransformerMixin):
         self.batch_size = batch_size
         return
 
+    # -------------
+    # Main function to be called when training the model
+    # -------------
     def fit(self, X, y):
         self._train(X, y)
         return
 
     def predict(self, X):
-        return
+        self.eval()
+        return self.score_sample(X)
 
     def score_sample(self, X):
         return self.forward(FT(X))
-    
+
+    # ---------------------------
+    # Externally set the weights
+    # ----------------------------
     def update_W(self, new_W):
-        self.W.data = FT(new_W)
-    
+        self.W.data = torch.from_numpy(new_W)
+        return
     # -------------
     # X has shape [ N, nd, emb_dm ]
     # y has shape [N]
@@ -65,8 +74,12 @@ class linearClassifier(nn.Module, TransformerMixin):
         sum_wx = self.forward(FT(x))
         # Regression style MSE loss function
         y = FT(y)
+        loss = F.smooth_l1_loss(
+            sum_wx,
+            y,
+            reduction='none'
+        )
 
-        loss = F.smooth_l1_loss(sum_wx, y, reduction='none')
         if reg:
             l2_reg = torch.norm(self.W.data)
             loss += 0.000001 * l2_reg
@@ -75,8 +88,11 @@ class linearClassifier(nn.Module, TransformerMixin):
         self.opt.step()
         return loss
 
-    def _train(self, X, y):
-        log_interval = 100
+    # ============================
+    # Assume that the labels are +1, -1
+    # ============================
+    def _train(self, X, y, log_interval=100):
+        self.train()
         # there are 2 labels
         # +1 and -1
         pos_idx = np.where(y == 1)[0]
@@ -99,6 +115,9 @@ class linearClassifier(nn.Module, TransformerMixin):
                 print('Step {} Loss {:.4f}'.format(e + 1, _loss))
         return
 
+    # ==============================
+    # Train the model on positive samples only
+    # ==============================
     def fit_on_pos(self, X, y, n_epochs=None):
         pos_idx = np.where(y == 1)[0]
         bs = self.batch_size
@@ -115,6 +134,7 @@ class linearClassifier(nn.Module, TransformerMixin):
         return
 
     def predict_score_op(self, X):
+        self.eval()
         res_y = self.forward(FT(X))
         return res_y.cpu().data.numpy()
 

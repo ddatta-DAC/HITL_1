@@ -39,6 +39,7 @@ def cosine_loss(X, Y):
 # Combine Projected GD and Confidence weighted GD 
 # =====================================================================
 class onlineGD:
+
     def __init__(self, num_coeff, emb_dim):
         self.num_coeff = num_coeff
         self.coeff_mask: ndarray = np.zeros(num_coeff)
@@ -47,8 +48,7 @@ class onlineGD:
         }
         self.W_cur = None
         self.emb_dim = emb_dim
-        self.gradient_fn =  calculate_dotProd_gradient
-        # self.gradient_fn = tangent.grad(cosine_loss, verbose=False)
+        self.gradient_fn = calculate_dotProd_gradient
         self.W_orig = None
         return
 
