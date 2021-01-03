@@ -205,9 +205,6 @@ y_1 = -1 * np.ones(X_1.shape[0])
 y = np.hstack([y_0,y_1])
 X = np.vstack([X_0,X_1])
 
-
-
-
 classifier_obj = get_trained_classifier(X,y , num_domains, emb_dim)
 num_coeff = len(domainInteraction_index)
 W = classifier_obj.W.cpu().data.numpy()
@@ -332,7 +329,6 @@ def execute_no_input(
 num_runs = 20
 cumulative_results = pd.DataFrame(columns=['idx','acc'])
 results_no_input = pd.DataFrame(columns=['idx','acc'])
-
 
 for i in range(num_runs):
     cur_df = data_reference_df.copy()
