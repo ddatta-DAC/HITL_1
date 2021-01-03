@@ -47,7 +47,7 @@ class linearClassifier(
     # Externally set the weights
     # ----------------------------
     def update_W(self, new_W):
-        self.W.data = torch.from_numpy(new_W)
+        self.W.data = torch.from_numpy(new_W).float()
         return
     # -------------
     # X has shape [ N, nd, emb_dm ]
