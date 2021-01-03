@@ -190,7 +190,10 @@ def execute_without_input(
     return acc
 
 
-def plot( df1,df2 ):
+def plot_figure( df1,df2 ):
+    global DIR
+
+    ts = str(time.time()).split('.')[0]
     plt.figure(figsize=[6,4])
     plt.title('Accuracy in next {} samples| Iteration(batch) : {} samples'.format(top_K_count, feedback_batch_size))
     plt.xlabel('Batch index',fontsize=14)
@@ -199,7 +202,7 @@ def plot( df1,df2 ):
     sns.lineplot(data=df2, x="idx", y="acc",markers=True, label='No Input')
     plt.legend(fontsize=14)
     plt.grid()
-    plt.savefig('{}_results_v1.png'.format(DIR))
+    plt.savefig('{}_results_v1_{}.png'.format(DIR, ts))
     try:
         plt.show()
     except:
@@ -300,7 +303,7 @@ def main_executor():
             entry = explanations[_id]
             domain_1 = entry[0][0]
             domain_2 = entry[0][1]
-            working_df.loc[i,'expl_1']= domainInteraction_index['_'.join(sorted( [domain_1, domain_2]))]
+            working_df.loc[i,'expl_1'] = domainInteraction_index['_'.join(sorted( [domain_1, domain_2]))]
             domain_1 = entry[1][0]
             domain_2 = entry[1][1]
             working_df.loc[i,'expl_2'] = domainInteraction_index['_'.join(sorted( [domain_1, domain_2]))]
@@ -371,7 +374,25 @@ feedback_batch_size = args.feedback_size
 top_K_count = args.top_K
 setup_config(DIR)
 
+# --------------------------------
 
+def checkPerformance():
+    num_runs = 10
+    df1 = None
+    df2 = None
+    for n in range(num_runs):
 
+        results_with_input, results_no_input = main_executor()
+        if df1 is None:
+            df1 = results_with_input
+        else:
+            df1 = df1.append(results_with_input, ignore_index=True)
+        if df2 is None:
+            df2 = results_no_input
+        else:
+            df2 = df2.append(results_no_input, ignore_index=True)
 
+    plot_figure(df1,df2)
+    return
 
+checkPerformance()
