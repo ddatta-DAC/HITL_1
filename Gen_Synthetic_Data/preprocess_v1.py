@@ -101,15 +101,15 @@ def get_regex(_type):
 
     if DIR == 'us_import3':
         if _type == 'train':
-            return '.*0[1-3]_2016.csv'
+            return '.*0[1-4]_2016.csv'
         if _type == 'test':
-            return '.*0[4-6]_2016.csv'
+            return '.*0[5-6]_2016.csv'
         
     if DIR == 'us_import4':
         if _type == 'train':
-            return '.*0[4-6]_2016.csv'
+            return '.*0[4-7]_2016.csv'
         if _type == 'test':
-            return '.*0[7-9]_2016.csv'
+            return '.*0[8-9]_2016.csv'
     
     if DIR == 'us_import5':
         if _type == 'train':
