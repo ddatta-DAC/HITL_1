@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[75]:
-
 
 try:
     get_ipython().run_line_magic('load_ext', 'autoreload')
@@ -33,80 +31,72 @@ import linear_model
 import seaborn as sns
 from matplotlib import pyplot as plt
 import argparse
+from record import record_class
+import yaml
 
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '--DIR', choices=['us_import1', 'us_import2', 'us_import3','us_import4'],
-    default=None
-)
-
-
-args = parser.parse_args()
-DIR = args.DIR
-
-# ============================================
-
-
-embedding_path  = './../../createGraph_trade/saved_model_data/{}'.format(DIR)
+explantions_file_path = None
+embedding_data_path =  None
+serialID_mapping_loc = None
+anomalies_pos_fpath = None
+anomalies_neg_fpath = None
+'''
+embedding_data_path  = './../../createGraph_trade/saved_model_data/{}'.format(DIR)
 serialID_mapping_loc = './../../generated_data_v1/{}/idMapping.csv'.format(DIR)
-idMapper_file = os.path.join(serialID_mapping_loc)
-mapping_df = pd.read_csv(idMapper_file, index_col=None)
-serialID_to_entityID = {}
-
-for i, row in mapping_df.iterrows():
-    serialID_to_entityID[row['serial_id']] = row['entity_id']
-
 anomalies_pos_fpath = './../../generated_data_v1/generated_anomalies/{}/pos_anomalies.csv'.format(DIR)
 anomalies_neg_fpath = './../../generated_data_v1/generated_anomalies/{}/neg_anomalies.csv'.format(DIR)
-anom_pos_df = pd.read_csv(anomalies_pos_fpath, index_col=None)
-anom_neg_df = pd.read_csv(anomalies_neg_fpath, index_col=None)
+explantions_f_path =  './../../generated_data_v1/generated_anomalies/{}/pos_anomalies_explanations.json'.format(DIR)
+'''
 
 
 
-class record_obj:
-    embedding = None
-    serialID_to_entityID = None
-    @staticmethod
-    def __setup_embedding__(embedding_path, serialID_to_entityID, _normalize = True):
-        record_obj.embedding = {}
-        record_obj.serialID_to_entityID = serialID_to_entityID
-        files =  glob.glob(os.path.join(embedding_path,'**.npy'))
-        for f in sorted(files):
-            emb = np.load(f)
-            domain = f.split('/')[-1].split('_')[-1].split('.')[0]
-            if _normalize:
-                emb = normalize(emb,axis=1)
-            record_obj.embedding[domain] = emb
-        return
-    
-    def __init__(self, _record, _label):
-        id_col = 'PanjivaRecordID'
-        self.id = _record[id_col]
-        domains = list(record_obj.embedding.keys())
-        self.x = []
-        self.label = _label
-        for d,e in _record.items():
-            if d == id_col: continue
-            non_serial_id = serialID_to_entityID[e]
-            self.x.append(record_obj.embedding[d][non_serial_id])
-        self.x = np.array(self.x)
 
-record_obj.__setup_embedding__(embedding_path, serialID_to_entityID, _normalize=True)
+def setup_config(DIR):
+    global explantions_file_path
+    global embedding_data_path
+    global serialID_mapping_loc
+    global anomalies_pos_fpath
+    global anomalies_neg_fpath
+    global domain_dims
+    global test_data_serialized_loc
+    with open('config.yaml','r') as fh:
+        config = yaml.safe_load(fh)
 
-emb_dim = record_obj.embedding['HSCode'].shape[1]
+    serialID_mapping_loc = config['serialID_mapping_loc'].format(DIR)
+    embedding_data_path = config['embedding_data_path'].format(DIR)
+    explantions_file_path = config['explantions_file_path'].format(DIR)
+    anomalies_pos_fpath = config['anomalies_pos_fpath'].format(DIR)
+    anomalies_neg_fpath = config['anomalies_neg_fpath'].format(DIR)
+    test_data_serialized_loc = config['test_data_serialized_loc'].format(DIR)
+
+    with open(config['domain_dims_file_path'].format(DIR), 'rb') as fh:
+        domain_dims = pickle.load(fh)
+    return
+
+# ---------------------------------------------------------------------------------
+def get_serialID_to_entityID():
+    global serialID_mapping_loc
+    idMapper_file = os.path.join(serialID_mapping_loc)
+    mapping_df = pd.read_csv(idMapper_file, index_col=None)
+    serialID_to_entityID = {}
+
+    for i, row in mapping_df.iterrows():
+        serialID_to_entityID[row['serial_id']] = row['entity_id']
+    return serialID_to_entityID
 
 
-def obtain_normal_samples(DIR):
+# ---------------------------
+# Get records which are deemed nominal/normal
+# ---------------------------
+def obtain_normal_samples():
+    global test_data_serialized_loc
     normal_data = pd.read_csv(
-        './../../generated_data_v1/{}/stage_2/test_serialized.csv'.format(DIR), index_col= None
+        test_data_serialized_loc, index_col=None
     )
-    
-    _df =  normal_data.sample(5000)
+
+    _df = normal_data.sample(5000)
     obj_list = []
     for i in tqdm(range(_df.shape[0])):
-        obj = record_obj(_df.iloc[i].to_dict(),-1)
+        obj = record_class(_df.iloc[i].to_dict(), -1)
         obj_list.append(obj)
     data_x = []
     for _obj in obj_list:
@@ -114,37 +104,78 @@ def obtain_normal_samples(DIR):
     data_x = np.stack(data_x)
     return data_x
 
+def get_trained_classifier( X,y , num_domains, emb_dim, num_epochs=10000):
+    classifier_obj = linear_model.linearClassifier(
+        num_domains = num_domains , emb_dim = emb_dim, num_epochs=num_epochs
+    )
+
+    # classifier_obj.fit_on_pos(X, np.ones(X.shape[0]),n_epochs=10000)
+    classifier_obj.fit(X, y)
+    classifier_obj.fit_on_pos( X, y, n_epochs=num_epochs//2)
+    return classifier_obj
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    '--DIR',
+    choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5', 'us_import6'],
+    default=None
+)
+
+parser.add_argument(
+    '--feedback_size',
+    type=int,
+    default=10
+)
+parser.add_argument(
+    '--top_K',
+    type = int,
+    default=10,
+)
+
+args = parser.parse_args()
+DIR = args.DIR
+feedback_batch_size = args.feedback_size
+top_K_count = args.top_K
+
+setup_config(DIR)
+# ============================================
+anom_pos_df = pd.read_csv(anomalies_pos_fpath, index_col=None)
+anom_neg_df = pd.read_csv(anomalies_neg_fpath, index_col=None)
+# ============================================
+# setup objects
+
+
+
+serialID_to_entityID = get_serialID_to_entityID()
+record_class.__setup_embedding__(embedding_data_path, serialID_to_entityID, _normalize=True)
+emb_dim = record_class.embedding['HSCode'].shape[1]
+
+# -------------------------------------------
 obj_list = []
 for i in tqdm(range(anom_neg_df.shape[0])):
-    obj = record_obj(anom_neg_df.iloc[i].to_dict(),-1)
+    obj = record_class(anom_neg_df.iloc[i].to_dict(),-1)
     obj_list.append(obj)
     
 for i in tqdm(range(anom_pos_df.shape[0])):
-    obj = record_obj(anom_pos_df.iloc[i].to_dict(),1)
+    obj = record_class(anom_pos_df.iloc[i].to_dict(),1)
     obj_list.append(obj)
 
 # Read in the explantions
-
-explantions_f_path =  './../../generated_data_v1/generated_anomalies/{}/pos_anomalies_explanations.json'.format(DIR)
-with open(explantions_f_path,'rt') as fh:
+with open(explantions_file_path,'rt') as fh:
     explanations = json.load(fh)
 explanations = { int(k): [sorted (_) for _ in v] for k,v in explanations.items()}
-
-domain_dims = None
-with open('./../../generated_data_v1/{}/domain_dims.pkl'.format(DIR), 'rb') as fh :
-    domain_dims = pickle.load(fh)
 
 num_domains = len(domain_dims)
 domain_idx = { e[0]:e[1] for e in enumerate(domain_dims.keys())}
 domain_list = list(domain_dims.keys())
-
 domainInteraction_index = {}
 k = 0 
 for i in range(num_domains):
     for j in range(i+1,num_domains):
         domainInteraction_index['_'.join((domain_idx[i] , domain_idx[j]))] = k
         k+=1
-
 
 data_x = []
 data_id = []
@@ -167,42 +198,28 @@ data_x = data_x[idx]
 data_label = data_label[idx]
 data_id = data_id[idx]
 
-
 X_0 = data_x 
-X_1 = obtain_normal_samples(DIR)
-
+X_1 = obtain_normal_samples()
 y_0 = np.ones(X_0.shape[0])
 y_1 = -1 * np.ones(X_1.shape[0])
 y = np.hstack([y_0,y_1])
 X = np.vstack([X_0,X_1])
 
 
-def get_trained_classifier( X,y , num_domains, emb_dim, num_epochs=10000):
-    classifier_obj = linear_model.linearClassifier(
-        num_domains = num_domains , emb_dim = emb_dim, num_epochs=num_epochs
-    )
 
-    # classifier_obj.fit_on_pos(X, np.ones(X.shape[0]),n_epochs=10000)
-    classifier_obj.fit(X, y)
-    classifier_obj.fit_on_pos( X, y, n_epochs=5000)
-    return classifier_obj
 
 classifier_obj = get_trained_classifier(X,y , num_domains, emb_dim)
-      
-
 num_coeff = len(domainInteraction_index)
 W = classifier_obj.W.cpu().data.numpy()
 emb_dim = W.shape[-1]
 
 # classifier_obj.predict_score_op(X_0)
-
 # Create a referece dataframe  :: data_reference_df
 
 working_df = pd.DataFrame(
     data = np.vstack([data_id, data_label]).transpose(), 
     columns=['PanjivaRecordID', 'label'] 
 )
-
 working_df['baseID'] = working_df['PanjivaRecordID'].apply(lambda x : str(x)[:-3])
 working_df['expl_1'] = -1
 working_df['expl_2'] = -1
@@ -324,8 +341,8 @@ for i in range(num_runs):
             clf_obj = copy.deepcopy(classifier_obj),
             working_df = cur_df,
             domainInteraction_index = domainInteraction_index,
-            check_next = 50,
-            batch_size = 10
+            check_next = top_K_count,
+            batch_size = feedback_batch_size
     )
     _tmpdf = pd.DataFrame( [(e[0],e[1]) for e in enumerate(acc)], columns=['idx','acc'] )
     cumulative_results = cumulative_results.append(
@@ -334,19 +351,20 @@ for i in range(num_runs):
     
     acc = execute_no_input(
             working_df = cur_df,
-            check_next = 50,
-            batch_size = 10
+            check_next = top_K_count,
+            batch_size = feedback_batch_size
     )
     _tmpdf = pd.DataFrame( [(e[0],e[1]) for e in enumerate(acc)], columns=['idx','acc'] )
     results_no_input = results_no_input.append(
        _tmpdf, ignore_index=True
     )
     
+# ------------------------------------------------------ #
 
 plt.figure(figsize=[6,4])
-plt.title('Accuracy in next 50 samples| Iteration(batch) : 10 samples')
+plt.title('Accuracy in next {} samples| Iteration(batch) : {} samples'.format(top_K_count, feedback_batch_size))
 plt.xlabel('Batch index',fontsize=14)
-plt.ylabel('Accuracy in next 50 samples', fontsize=14)
+plt.ylabel('Accuracy in next {} samples'.format(top_K_count), fontsize=14)
 sns.lineplot(data=cumulative_results, x="idx", y="acc",markers=True, label = 'Input provided')
 sns.lineplot(data=results_no_input, x="idx", y="acc",markers=True, label='No Input')
 plt.legend(fontsize=14)
@@ -358,8 +376,6 @@ except:
     pass
 plt.close()
 
-
-# In[ ]:
 
 
 
