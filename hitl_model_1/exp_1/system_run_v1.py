@@ -1,30 +1,17 @@
 #!/usr/bin/env python
 # coding: utf-8
-
-
-try:
-    get_ipython().run_line_magic('load_ext', 'autoreload')
-    get_ipython().run_line_magic('autoreload', '2')
-except:
-    pass
-
-
 import pandas as pd
 import numpy as np
 import os
 import sys
 import glob
 from sklearn.preprocessing import normalize
-sys.path.append('../..')
-sys.path.append('../../..')
+sys.path.append('./..')
+sys.path.append('./../..')
 from pathlib import Path
 from tqdm import tqdm
 import pickle
 import copy
-try:
-    from IPython.display import display
-except:
-    pass
 import json
 from onlineGD import onlineGD
 import linear_model
@@ -48,9 +35,6 @@ anomalies_pos_fpath = './../../generated_data_v1/generated_anomalies/{}/pos_anom
 anomalies_neg_fpath = './../../generated_data_v1/generated_anomalies/{}/neg_anomalies.csv'.format(DIR)
 explantions_f_path =  './../../generated_data_v1/generated_anomalies/{}/pos_anomalies_explanations.json'.format(DIR)
 '''
-
-
-
 
 def setup_config(DIR):
     global explantions_file_path
