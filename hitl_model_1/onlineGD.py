@@ -4,9 +4,13 @@ from numpy.core._multiarray_umath import ndarray
 from torch import LongTensor as LT
 import os
 import sys
-import tangent
+# try:
+#     import tangent
+# except:
+#     pass
 import warnings
 from scipy.linalg import qr
+from loss_function_grad import calculate_cosineDist_gradient, calculate_dotProd_gradient
 
 warnings.filterwarnings("ignore")
 sys.path.append('./..')
@@ -43,7 +47,8 @@ class onlineGD:
         }
         self.W_cur = None
         self.emb_dim = emb_dim
-        self.gradient_fn = tangent.grad(cosine_loss, verbose=False)
+        self.gradient_fn =  calculate_dotProd_gradient
+        # self.gradient_fn = tangent.grad(cosine_loss, verbose=False)
         self.W_orig = None
         return
 
@@ -54,13 +59,13 @@ class onlineGD:
     # ------------------------------------
     # list_feature_mod_idx: A list of list of indices for each sample.
     # empty list for a sample means no explanation
-    # signs :
+    # signs 
     # ------------------------------------
     def update_weight(
             self,
             label=[],
             list_feature_mod_idx=[],
-            X=None
+            X = None
     ):
         update_mask = []
         W = self.W_cur
@@ -78,17 +83,36 @@ class onlineGD:
         num_samples = update_mask.shape[0]
 
         # Output mask shape : num_samples, num_coeff, coeff_dim
-        output_mask = np.broadcast_to(update_mask.reshape([update_mask.shape[0], update_mask.shape[1], 1]),
-                                      [update_mask.shape[0], update_mask.shape[1], emb_dim])
+        output_mask = np.broadcast_to(
+            update_mask.reshape([update_mask.shape[0], update_mask.shape[1], 1]),
+            [update_mask.shape[0], update_mask.shape[1], emb_dim]
+        )
         # tiled_W shape: [ Num_samples, num_coeff, coeff_dim ]
         tiled_W = np.tile(W.reshape([1, W.shape[0], W.shape[1]]), (num_samples, 1, 1))
+        
+        # ----------------------------
+        # X is raw
+        # convert to X_features where X[i_j] is the pairwise interaction
+    
+        
+        num_inp_terms = X.shape[1]
+        x_split = np.split(X,num_inp_terms,axis=1)
+        x_split = [_.squeeze(1) for _ in x_split]
+        x_features = []
 
+        for i in range(num_inp_terms):
+            for j in  range(i+1, num_inp_terms):
+                x_ij = x_split[i] * x_split[j]
+                x_features.append(x_ij)
+        x_features = np.stack(x_features, axis=1)
+        
         gradient_values = np.zeros(tiled_W.shape)
         for i in range(num_samples):
             for j in range(num_coeff):
-                g = self.gradient_fn(tiled_W[i][j], X[i][j])
+                g = self.gradient_fn(tiled_W[i][j], x_features[i][j])
                 g = update_mask[i][j] * g
                 gradient_values[i][j] = g
+                
         divisor = np.sum(update_mask, axis=0)
         divisor = np.reciprocal(divisor)
         divisor = np.where(divisor == np.inf, 0, divisor)
@@ -134,7 +158,7 @@ class onlineGD:
         # Add up the multiple projections
         sum_grad_projections = np.array(sum_grad_projections)
         final_gradient = sum_grad_projections
-
+       
         # Save avg_gradients
         for i in range(num_coeff):
             if coeff_update_flag[i]:

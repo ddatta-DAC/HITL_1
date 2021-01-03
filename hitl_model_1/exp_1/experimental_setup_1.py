@@ -342,10 +342,6 @@ for i in range(num_runs):
        _tmpdf, ignore_index=True
     )
     
-    
-
-
-
 
 plt.figure(figsize=[6,4])
 plt.title('Accuracy in next 50 samples| Iteration(batch) : 10 samples')

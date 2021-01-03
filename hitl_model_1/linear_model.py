@@ -36,7 +36,10 @@ class linearClassifier(nn.Module, TransformerMixin):
 
     def score_sample(self, X):
         return self.forward(FT(X))
-
+    
+    def update_W(self, new_W):
+        self.W.data = FT(new_W)
+    
     # -------------
     # X has shape [ N, nd, emb_dm ]
     # y has shape [N]
@@ -53,6 +56,7 @@ class linearClassifier(nn.Module, TransformerMixin):
                 terms.append(_ij)
                 k += 1
         wx = torch.stack(terms, dim=-1)
+       
         sum_wx = torch.sum(wx, dim=-1)
         return sum_wx
 
@@ -106,32 +110,32 @@ class linearClassifier(nn.Module, TransformerMixin):
             _y = np.ones([bs])
             _loss = self.train_iter(_x, _y)
             _loss = _loss.cpu().data.numpy().mean()
-            if e % 5 == 0:
+            if e % 100 == 0:
                 print('Step {} Loss {:.4f}'.format(e + 1, _loss))
         return
 
-    def predict(self, X):
-
-        return
+    def predict_score_op(self, X):
+        res_y = self.forward(FT(X))
+        return res_y.cpu().data.numpy()
 
 
 # ----------------------------------------------------------
-X1 = np.random.normal(
-    loc=-2, scale=1.5, size=[1000, 5, 16]
-)
-X2 = np.random.normal(
-    loc=2, scale=1, size=[1000, 5, 16]
-)
-X = np.vstack([X1, X2])
-y = np.hstack([np.ones(1000), np.ones(1000) * -1])
+# X1 = np.random.normal(
+#     loc=-2, scale=1.5, size=[1000, 5, 16]
+# )
+# X2 = np.random.normal(
+#     loc=2, scale=1, size=[1000, 5, 16]
+# )
+# X = np.vstack([X1, X2])
+# y = np.hstack([np.ones(1000), np.ones(1000) * -1])
 
-print(y.shape)
-obj = linearClassifier(num_domains=5, emb_dim=16, num_epochs=10000, batch_size=256)
-obj.fit(X, y)
-obj.fit_on_pos(X, y, 100)
+# print(y.shape)
+# obj = linearClassifier(num_domains=5, emb_dim=16, num_epochs=10000, batch_size=256)
+# obj.fit(X, y)
+# obj.fit_on_pos(X, y, 100)
 
-print(obj.score_sample(X[:10]))
-print(y[:10])
+# print(obj.score_sample(X[:10]))
+# print(y[:10])
 
-print(obj.score_sample(X[-10:]))
-print(y[-10:])
+# print(obj.score_sample(X[-10:]))
+# print(y[-10:])
