@@ -1,9 +1,8 @@
 ConsigneePanjivaID,HSCode,ShipperPanjivaID
 ShipperPanjivaID,HSCode,ConsigneePanjivaID
+ConsigneePanjivaID,Carrier,ShipperPanjivaID
 Carrier,PortOfLading,ShipmentOrigin
 Carrier,PortOfUnlading,ShipmentDestination
-ConsigneePanjivaID,HSCode,ShipperPanjivaID
-ShipperPanjivaID,HSCode,ConsigneePanjivaID
 ShipmentDestination,HSCode,ShipmentOrigin
 ShipmentOrigin,HSCode,ShipmentDestination
 PortOfLading,ShipmentOrigin,HSCode
