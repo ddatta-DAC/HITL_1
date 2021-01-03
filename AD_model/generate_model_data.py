@@ -63,8 +63,8 @@ test_pos_fpath = os.path.join( './../generated_data_v1/{}/stage_2/test_pos_seria
 test_neg_fpath = os.path.join( './../generated_data_v1/{}/stage_2/test_neg_serialized.csv'.format(DIR)) 
 
 src_path = './../generated_data_v1/genearted_anomalies/{}'.format(DIR)
-anom_pos_df = pd.read_csv(os.path.join(src_path, 'pos_anomalies.csv' ), index_col=None)
-anom_pos_df = pd.read_csv(os.path.join(src_path, 'neg_anomalies.csv' ), index_col=None)
+anom_pos_df = pd.read_csv(os.path.join(anomaly_source_dir, 'pos_anomalies.csv' ), index_col=None)
+anom_pos_df = pd.read_csv(os.path.join(anomaly_source_dir, 'neg_anomalies.csv' ), index_col=None)
 # simple sanity check!
 print('Positive anomalies :: ', len(anom_pos_df))
 print('Negative anomalies :: ', len(anom_neg_df))
