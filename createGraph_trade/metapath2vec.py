@@ -302,7 +302,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '--W2V_EPOCHS',
-    default=150,
+    default=250,
     type=int
 )
 
