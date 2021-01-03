@@ -32,8 +32,8 @@ class linearClassifier(
     # -------------
     # Main function to be called when training the model
     # -------------
-    def fit(self, X, y):
-        self._train(X, y)
+    def fit(self, X, y, log_interval=100):
+        self._train(X, y, log_interval = log_interval)
         return
 
     def predict(self, X):
@@ -49,6 +49,7 @@ class linearClassifier(
     def update_W(self, new_W):
         self.W.data = torch.from_numpy(new_W).float()
         return
+
     # -------------
     # X has shape [ N, nd, emb_dm ]
     # y has shape [N]
@@ -65,7 +66,7 @@ class linearClassifier(
                 terms.append(_ij)
                 k += 1
         wx = torch.stack(terms, dim=-1)
-       
+
         sum_wx = torch.sum(wx, dim=-1)
         return sum_wx
 
@@ -118,7 +119,7 @@ class linearClassifier(
     # ==============================
     # Train the model on positive samples only
     # ==============================
-    def fit_on_pos(self, X, y, n_epochs=None):
+    def fit_on_pos(self, X, y, n_epochs=None, log_interval=250):
         pos_idx = np.where(y == 1)[0]
         bs = self.batch_size
         if n_epochs is None:
@@ -129,7 +130,7 @@ class linearClassifier(
             _y = np.ones([bs])
             _loss = self.train_iter(_x, _y)
             _loss = _loss.cpu().data.numpy().mean()
-            if e % 100 == 0:
+            if e % log_interval == 0:
                 print('Step {} Loss {:.4f}'.format(e + 1, _loss))
         return
 
@@ -137,7 +138,6 @@ class linearClassifier(
         self.eval()
         res_y = self.forward(FT(X))
         return res_y.cpu().data.numpy()
-
 
 # ----------------------------------------------------------
 # X1 = np.random.normal(
