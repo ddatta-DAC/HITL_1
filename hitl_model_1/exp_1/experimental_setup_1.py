@@ -58,7 +58,7 @@ def setup_config(DIR):
     global anomalies_neg_fpath
     global domain_dims
     global test_data_serialized_loc
-    with open('config.yaml','r') as fh:
+    with open('../config.yaml', 'r') as fh:
         config = yaml.safe_load(fh)
 
     serialID_mapping_loc = config['serialID_mapping_loc'].format(DIR)

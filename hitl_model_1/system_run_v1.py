@@ -6,8 +6,8 @@ import os
 import sys
 import glob
 from sklearn.preprocessing import normalize
-sys.path.append('./..')
-sys.path.append('./../..')
+sys.path.append('')
+sys.path.append('..')
 from pathlib import Path
 from tqdm import tqdm
 import pickle
@@ -45,7 +45,7 @@ def setup_config(DIR):
     global anomalies_neg_fpath
     global domain_dims
     global test_data_serialized_loc
-    with open('config.yaml','r') as fh:
+    with open('config.yaml', 'r') as fh:
         config = yaml.safe_load(fh)
 
     serialID_mapping_loc = config['serialID_mapping_loc'].format(DIR)
@@ -97,7 +97,7 @@ def get_trained_classifier( X,y , num_domains, emb_dim, num_epochs=10000):
     )
 
     # classifier_obj.fit_on_pos(X, np.ones(X.shape[0]),n_epochs=10000)
-    classifier_obj.fit(X, y, log_interval=1000)
+    classifier_obj.fit(X, y, log_interval=5000)
     classifier_obj.fit_on_pos( X, y, n_epochs=num_epochs//2, log_interval=1000)
     return classifier_obj
 
@@ -191,8 +191,10 @@ def execute_without_input(
     return acc
 
 
-def plot_figure( df1,df2 ):
+def plot_figure( df1, df2 ):
     global DIR
+    global feedback_batch_size
+    global top_K_count
 
     ts = str(time.time()).split('.')[0]
     plt.figure(figsize=[6,4])
@@ -210,6 +212,27 @@ def plot_figure( df1,df2 ):
         pass
     plt.close()
 
+
+def plot_figure(list_df1):
+    global DIR
+    global feedback_batch_size
+    global top_K_count
+
+    ts = str(time.time()).split('.')[0]
+    plt.figure(figsize=[6, 4])
+    plt.title('Accuracy in next {} samples| Iteration(batch) : {} samples'.format(top_K_count, feedback_batch_size))
+    plt.xlabel('Batch index', fontsize=14)
+    plt.ylabel('Accuracy in next {} samples'.format(top_K_count), fontsize=14)
+    sns.lineplot(data=df1, x="idx", y="acc", markers=True, label='Input provided')
+    sns.lineplot(data=df2, x="idx", y="acc", markers=True, label='No Input')
+    plt.legend(fontsize=14)
+    plt.grid()
+    plt.savefig('{}_results_v1_{}.png'.format(DIR, ts))
+    try:
+        plt.show()
+    except:
+        pass
+    plt.close()
 
 def main_executor():
     global explantions_file_path
@@ -347,7 +370,7 @@ def main_executor():
     )
     return results_with_input, results_no_input
 
-    # ------------------------------------------------------ #
+# ------------------------------------------------------ #
 
 
 # -------------------------------------------
@@ -377,23 +400,23 @@ setup_config(DIR)
 
 # --------------------------------
 
-def checkPerformance():
-    num_runs = 10
-    df1 = None
-    df2 = None
-    for n in range(num_runs):
-
-        results_with_input, results_no_input = main_executor()
-        if df1 is None:
-            df1 = results_with_input
-        else:
-            df1 = df1.append(results_with_input, ignore_index=True)
-        if df2 is None:
-            df2 = results_no_input
-        else:
-            df2 = df2.append(results_no_input, ignore_index=True)
-
-    plot_figure(df1,df2)
-    return
-
-checkPerformance()
+# def checkPerformance():
+#     num_runs = 10
+#     df1 = None
+#     df2 = None
+#     for n in range(num_runs):
+#
+#         results_with_input, results_no_input = main_executor()
+#         if df1 is None:
+#             df1 = results_with_input
+#         else:
+#             df1 = df1.append(results_with_input, ignore_index=True)
+#         if df2 is None:
+#             df2 = results_no_input
+#         else:
+#             df2 = df2.append(results_no_input, ignore_index=True)
+#
+#     plot_figure(df1,df2)
+#     return
+#
+# checkPerformance()
