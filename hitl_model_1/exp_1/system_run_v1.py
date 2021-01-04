@@ -20,6 +20,7 @@ from matplotlib import pyplot as plt
 import argparse
 from record import record_class
 import yaml
+import time
 
 explantions_file_path = None
 embedding_data_path =  None
