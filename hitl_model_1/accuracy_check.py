@@ -67,8 +67,11 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+DIR = args.DIR
 main_module.DIR = args.DIR
+feedback_batch_size = args.feedback_size
 main_module.feedback_batch_size = args.feedback_size
-main_module.top_K_count = args.top_K
+top_K_count = args.top_K
+main_module.top_K_count = top_K_count 
 main_module.setup_config(main_module.DIR)
 checkPerformance()

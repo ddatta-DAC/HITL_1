@@ -4,4 +4,4 @@ anomalies_pos_fpath : './../generated_data_v1/generated_anomalies/{}/pos_anomali
 anomalies_neg_fpath : './../generated_data_v1/generated_anomalies/{}/neg_anomalies.csv'
 serialID_mapping_loc : './../generated_data_v1/{}/idMapping.csv'
 domain_dims_file_path : './../generated_data_v1/{}/domain_dims.pkl'
-test_data_serialized_loc : './../generated_data_v1/{}/stage_2/test_serialized.csv'.format(DIR)
+test_data_serialized_loc : './../generated_data_v1/{}/stage_2/test_serialized.csv'
