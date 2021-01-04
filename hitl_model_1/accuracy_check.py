@@ -6,6 +6,7 @@ parser = argparse.ArgumentParser()
 import seaborn as sns
 from matplotlib import pyplot as plt
 import time
+from pathlib import Path
 
 
 
@@ -14,6 +15,7 @@ def plot_figure(df1, df2):
     global DIR
     global feedback_batch_size
     global top_K_count
+    global figure_save_dir
 
     ts = str(time.time()).split('.')[0]
     plt.figure(figsize=[6, 4])
@@ -24,7 +26,7 @@ def plot_figure(df1, df2):
     sns.lineplot(data=df2, x="idx", y="acc", markers=True, label='No Input')
     plt.legend(fontsize=14)
     plt.grid()
-    plt.savefig('{}_results_v1_{}.png'.format(DIR, ts))
+    plt.savefig(os.path.join(figure_save_dir, '{}_results_{}_{}.png'.format(DIR, feedback_batch_size, top_K_count)))
     try:
         plt.show()
     except:
@@ -74,4 +76,9 @@ main_module.feedback_batch_size = args.feedback_size
 top_K_count = args.top_K
 main_module.top_K_count = top_K_count 
 main_module.setup_config(main_module.DIR)
+
+figure_save_dir = 'accuracy_check'
+path_obj = Path(figure_save_dir)
+path_obj.mkdir(exist_ok=True,parents=True)
+
 checkPerformance()
