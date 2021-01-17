@@ -22,7 +22,7 @@ ID_COL = 'PanjivaRecordID'
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '--DIR', choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5'],
+    '--DIR', choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5', 'us_import6'],
     default=None
 )
 
@@ -64,7 +64,7 @@ test_neg_fpath = os.path.join( './../generated_data_v1/{}/stage_2/test_neg_seria
 
 src_path = './../generated_data_v1/genearted_anomalies/{}'.format(DIR)
 anom_pos_df = pd.read_csv(os.path.join(anomaly_source_dir, 'pos_anomalies.csv' ), index_col=None)
-anom_pos_df = pd.read_csv(os.path.join(anomaly_source_dir, 'neg_anomalies.csv' ), index_col=None)
+anom_neg_df = pd.read_csv(os.path.join(anomaly_source_dir, 'neg_anomalies.csv' ), index_col=None)
 # simple sanity check!
 print('Positive anomalies :: ', len(anom_pos_df))
 print('Negative anomalies :: ', len(anom_neg_df))
