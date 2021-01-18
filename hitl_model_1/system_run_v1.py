@@ -263,9 +263,11 @@ def main_executor():
     for i in tqdm(range(anom_pos_df.shape[0])):
         obj = record_class(anom_pos_df.iloc[i].to_dict(),1)
         obj_list.append(obj)
-
+    
+    print(explantions_file_path)
+    print(os.getcwd())
     # Read in the explantions
-    with open(explantions_file_path,'rt') as fh:
+    with open(explantions_file_path,'rb') as fh:
         explanations = json.load(fh)
     explanations = { int(k): [sorted (_) for _ in v] for k,v in explanations.items()}
 
