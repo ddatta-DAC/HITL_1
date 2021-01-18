@@ -8,7 +8,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import sys
-
+from itertools import combinations
 sys.path.append('./..')
 sys.path.append('./../..')
 from pathlib import Path
@@ -30,20 +30,24 @@ def main(DIR):
     with open(os.path.join(DATA_LOC, 'domain_dims.pkl'), 'rb') as fh:
         domain_dims = pickle.load(fh)
 
-        # ---------------------------------------
+    # ---------------------------------------
     # This data is already serialized
     # ---------------------------------------
     data_df = pd.read_csv(os.path.join(DATA_LOC, 'train_data.csv'), index_col=None, low_memory=False)
     data_df = data_df.drop_duplicates(subset=list(domain_dims.keys()))
 
-    # ------------------------------# Create graph ingestible data
+    # ------------------------------
+    # Create graph ingestible data
     # ------------------------------
 
     ID_COL = 'PanjivRecordID'
-
     node_types = sorted(domain_dims.keys())
-
-    from itertools import combinations
+    
+    utils.convert_to_serializedID_format(
+        data_df,
+        DIR
+    )
+    
     candidate_edge_types = ['_'.join(sorted([a, b])) for a, b in combinations(node_types, 2)]
 
     with open('./valid_edges.txt', 'r') as fh:
@@ -69,6 +73,7 @@ def main(DIR):
             edges_df = pd.DataFrame(_df)
 
     nodes_df = pd.DataFrame(columns=['ID', 'n_type'])
+    
     idMapping_df = utils.fetch_idMappingFile(DIR)
 
     for domain in domain_dims.keys():
@@ -91,7 +96,7 @@ def main(DIR):
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '--DIR', choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5'],
+    '--DIR', choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5', 'us_import6'],
     default='us_import1'
 )
 
