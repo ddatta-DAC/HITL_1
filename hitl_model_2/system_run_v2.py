@@ -176,6 +176,7 @@ def execute_with_input(
             row_dict = ref_data_df.loc[(ref_data_df[ID_COL]==id_value)].iloc[0].to_dict()
             x_entityIds.append([row_dict[d] for d in domain_list])
         
+        x_entityIds = np.array(x_entityIds)
         x_ij = np.array(x_ij)
         final_gradient, _W = obj.update_weight(
             flags,
@@ -188,6 +189,9 @@ def execute_with_input(
         clf_obj.update_binary_VarW(x_entityIds, flags)
 
         working_df = working_df.iloc[BATCH_SIZE:]
+        if len(working_df) == 0 :
+            break
+        
         # Obtain scores
         x_ij_test = []
         x_entityIds = fetch_entityID_arr_byList (
@@ -404,29 +408,29 @@ def main_executor():
 
 
 # -------------------------------------------
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '--DIR',
-    choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5', 'us_import6'],
-    default=None
-)
+# parser = argparse.ArgumentParser()
+# parser.add_argument(
+#     '--DIR',
+#     choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5', 'us_import6'],
+#     default=None
+# )
 
-parser.add_argument(
-    '--feedback_size',
-    type=int,
-    default=10
-)
-parser.add_argument(
-    '--top_K',
-    type = int,
-    default=10,
-)
+# parser.add_argument(
+#     '--feedback_size',
+#     type=int,
+#     default=10
+# )
+# parser.add_argument(
+#     '--top_K',
+#     type = int,
+#     default=10,
+# )
 
-args = parser.parse_args()
-DIR = args.DIR
-feedback_batch_size = args.feedback_size
-top_K_count = args.top_K
-setup_config(DIR)
+# args = parser.parse_args()
+# DIR = args.DIR
+# feedback_batch_size = args.feedback_size
+# top_K_count = args.top_K
+# setup_config(DIR)
 
 # --------------------------------
 

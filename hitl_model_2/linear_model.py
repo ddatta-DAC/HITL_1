@@ -54,7 +54,7 @@ class linearClassifier_bEF(
         return self.score_sample(X)
 
     def score_sample(self, X):
-        return self.forward(FT(X))
+        return self.forward(FT(X)).cpu().data.numpy()
 
     # ---------------------------------------------------------
     # Prediction using interaction features + binary features
@@ -62,6 +62,7 @@ class linearClassifier_bEF(
     def predict_bEF(self, X_binary, X_interaction):
         self.eval()
         s1 = self.score_sample(X_interaction)
+        
         s2 = self.score_sample_bEF(X_binary)
         return s1 + s2
 
@@ -77,6 +78,7 @@ class linearClassifier_bEF(
     # y has shape [N]
     # -------------
     def forward(self, x):
+    
         _x_ = torch.chunk(x, self.num_domains, dim=1)
         _x_ = [_.squeeze(1) for _ in _x_]
         terms = []
@@ -198,6 +200,7 @@ class linearClassifier_bEF(
         label_flag = np.array(label_flag).reshape(-1)
         for d_idx in range(self.num_domains):
             if self.valid_binaryF_domains[d_idx] == 1:
+                
                 _entity_idx = X[:, d_idx].reshape(-1) # _entity_idx is a slice along column
                 e_idx = []
                 # For each sample check if it is labelled 1
@@ -228,9 +231,7 @@ class linearClassifier_bEF(
             _x_bd = _x_bd * self.valid_binaryF_domains[d_idx]
             X_binary_ohe.append(_x_bd)
 
-        X_binary_ohe = np.concatenate(
-            X_binary_ohe,
-            axis=1).shape
+        X_binary_ohe = np.concatenate(X_binary_ohe,axis=1)
 
         # --------------------
         # Multiply by weight
@@ -241,8 +242,9 @@ class linearClassifier_bEF(
         entity_validation_flag = np.concatenate(
             [np.array(_).reshape(1, -1) for _ in self.entity_flag], axis=1
         )
+        
         binary_W = self.binary_W * entity_validation_flag
-        wx = X_binary_ohe * binary_W
+        wx = np.sum(X_binary_ohe * binary_W,axis=1)
         return wx
 
 # ----------------------------------------------------------
