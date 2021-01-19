@@ -209,7 +209,9 @@ def convert_to_UnSerializedID_format(
         tmp = idMapping_df.loc[(idMapping_df['domain'] == domain)]
         serial_id = tmp['serial_id'].values.tolist()
         entity_id = tmp['entity_id'].values.tolist()
-        mapping_dict[serial_id] = entity_id
+        for s_id, e_id in zip(serial_id,entity_id):
+            mapping_dict[s_id] = e_id
+
 
     # Convert
     def convert_aux(val):
