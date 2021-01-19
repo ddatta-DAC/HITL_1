@@ -139,7 +139,7 @@ def execute_with_input(
         flags = []  # Whether a pos anaomaly or not
         terms = []  # Explanation terms
 
-        x = []
+        x_ij = []
         x_entityIds = []
 
         for i, row in cur.iterrows():
@@ -152,17 +152,16 @@ def execute_with_input(
             else:
                 flags.append(0)
                 terms.append(())
-            x.append(data_ID_to_matrix[row['PanjivaRecordID']])
-            row_dict = row.todict()
-            x_entityIds.append( [row_dict[d] for d in domain_list])
-        if len(x) < 2:
-            break
-        x = np.array(x)
-
+            x_ij.append(data_ID_to_matrix[row['PanjivaRecordID']])
+            
+            row_dict = row.to_dict()
+            x_entityIds.append([row_dict[d] for d in domain_list])
+        
+        x_ij = np.array(x_ij)
         final_gradient, _W = obj.update_weight(
             flags,
             terms,
-            x
+            x_ij
         )
 
         # Update weights
@@ -201,7 +200,7 @@ def execute_without_input(
     BATCH_SIZE = batch_size
     working_df['delta'] = 0
 
-    num_batches = len(working_df.loc[working_df['label'] == 1]) // BATCH_SIZE + 5
+    num_batches = len(working_df) // BATCH_SIZE + 1
     acc = []
     for b in range(num_batches):
         working_df = working_df.iloc[BATCH_SIZE:]
