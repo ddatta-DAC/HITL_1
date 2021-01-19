@@ -153,7 +153,7 @@ def execute_with_input(
                 flags.append(0)
                 terms.append(())
             x.append(data_ID_to_matrix[row['PanjivaRecordID']])
-            row_dict = row.todict()
+            row_dict = row.to_dict()
             x_entityIds.append( [row_dict[d] for d in domain_list])
         if len(x) < 2:
             break
