@@ -6,6 +6,7 @@ import glob
 import numpy as np
 import os
 import sklearn
+from collections import OrderedDict
 
 class record_class:
     embedding = None
@@ -25,6 +26,7 @@ class record_class:
         return
 
     def __init__(self, _record, _label):
+        _record = OrderedDict(_record)
         id_col = 'PanjivaRecordID'
         self.id = _record[id_col]
         domains = list(record_class.embedding.keys())

@@ -25,7 +25,7 @@ def cosine_loss(X, Y):
     similarity = np.sum(X*Y) / (xnorm * ynorm)
     return 1 - similarity
 
-# --------------------------------------------------
+
 
 # -----------------
 # W : weight

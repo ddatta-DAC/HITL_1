@@ -94,15 +94,23 @@ def obtain_normal_samples():
     return data_x
 
 def get_trained_classifier( X,y , num_domains, emb_dim, num_epochs=10000):
-    classifier_obj = linear_model.linearClassifier(
-        num_domains = num_domains , emb_dim = emb_dim, num_epochs=num_epochs
+    global domain_dims
+
+    classifier_obj = linear_model.linearClassifier_bEF(
+        num_domains = num_domains ,
+        emb_dim = emb_dim,
+        num_epochs=num_epochs
+    )
+
+    classifier_obj.setup_binaryFeatures(
+        domain_dims,
+        binaryF_domains = ['ConsigneePanjivaID','ShipperPanjivaID']
     )
 
     # classifier_obj.fit_on_pos(X, np.ones(X.shape[0]),n_epochs=10000)
     classifier_obj.fit(X, y, log_interval=5000)
     classifier_obj.fit_on_pos( X, y, n_epochs=num_epochs//2, log_interval=1000)
     return classifier_obj
-
 
 def execute_with_input(
         clf_obj,
@@ -120,9 +128,12 @@ def execute_with_input(
     W = clf_obj.W.cpu().data.numpy()
     obj.set_original_W(W)
 
-    num_batches = len(working_df.loc[working_df['label'] == 1]) // BATCH_SIZE + 5
+    max_num_batches = len(working_df) // BATCH_SIZE + 1
     acc = []
-    for b in range(num_batches):
+
+
+    for batch_idx in tqdm(range(max_num_batches)):
+
         cur = working_df.head(BATCH_SIZE)
         flags = []  # Whether a pos anaomaly or not
         terms = []  # Explanation terms
@@ -151,12 +162,16 @@ def execute_with_input(
 
         # Update weights
         clf_obj.update_W(_W)
+        clf_obj.update_binary_VarW(x, flags)
+
         working_df = working_df.iloc[BATCH_SIZE:]
         # Obtain scores
         x_test = []
         for _id in working_df['PanjivaRecordID'].values:
             x_test.append(data_ID_to_matrix[_id])
         x_test = np.array(x_test)
+
+
         new_scores = clf_obj.predict_score_op(x_test)
         old_scores = working_df['cur_score'].values
         _delta = new_scores - old_scores
@@ -256,7 +271,7 @@ def main_executor():
 
     num_domains = len(domain_dims)
     domain_idx = { e[0]:e[1] for e in enumerate(domain_dims.keys())}
-    domain_list = list(domain_dims.keys())
+
     domainInteraction_index = {}
     k = 0
     for i in range(num_domains):
@@ -268,6 +283,7 @@ def main_executor():
     data_id = []
     data_label = []
     data_ID_to_matrix = {}
+
     for _obj in obj_list:
         data_x.append(_obj.x)
         data_id.append(_obj.id)

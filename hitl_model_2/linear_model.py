@@ -8,16 +8,24 @@ from sklearn.base import TransformerMixin
 from tqdm import tqdm
 from torch import FloatTensor as FT
 from torch.nn import functional as F
+from sklearn.preprocessing import OneHotEncoder
 
 
-class linearClassifier(
+# =================================
+# Linear classifier
+# Two components:
+# 1 .Feature interactions
+# 2. Binary feature weights for each of the entity_ids corresponding to Companies ( Serves as whitelisting/ blaacklisting)
+# =================================
+class linearClassifier_bEF(
     nn.Module,
     TransformerMixin
 ):
+
     def __init__(
             self, num_domains, emb_dim, LR=0.001, num_epochs=250, batch_size=32
     ):
-        super(linearClassifier, self).__init__()
+        super(linearClassifier_bEF, self).__init__()
         self.emb_dim = emb_dim
         self.K = int(num_domains * (num_domains - 1) / 2)
         self.num_domains = num_domains
@@ -27,21 +35,35 @@ class linearClassifier(
         self.opt = torch.optim.Adam([self.W], lr=LR)
         self.num_epochs = num_epochs
         self.batch_size = batch_size
+
         return
 
     # -------------
     # Main function to be called when training the model
+    # Fits on the interaction features only
     # -------------
     def fit(self, X, y, log_interval=100):
-        self._train(X, y, log_interval = log_interval)
+        self._train(X, y, log_interval=log_interval)
         return
 
+    # ---------------------------------------------------------
+    # Prediction using interaction features
+    # ---------------------------------------------------------
     def predict(self, X):
         self.eval()
         return self.score_sample(X)
 
     def score_sample(self, X):
         return self.forward(FT(X))
+
+    # ---------------------------------------------------------
+    # Prediction using interaction features + binary features
+    # ---------------------------------------------------------
+    def predict_bEF(self, X_binary, X_interaction):
+        self.eval()
+        s1 = self.score_sample(X_interaction)
+        s2 = self.score_sample_bEF(X_binary)
+        return s1 + s2
 
     # ---------------------------
     # Externally set the weights
@@ -138,6 +160,88 @@ class linearClassifier(
         self.eval()
         res_y = self.forward(FT(X))
         return res_y.cpu().data.numpy()
+
+    def setup_binaryFeatures(
+            self,
+            domain_dims,
+            binaryF_domains
+    ):
+
+        self.domain_dims = domain_dims
+        self.total_entity_count = sum(domain_dims.values())
+        self.domain_oneHotEncoders = []
+        for dom, dim in self.domain_dims.items():
+            self.domain_oneHotEncoders += [OneHotEncoder().fit(np.arange(dim).reshape([-1, 1]))]
+        self.valid_binaryF_domains = np.zeros(len(self.num_domains))
+
+        _tmpidx = 0
+        for dom, dim in self.domain_dims.items():
+            if dom in binaryF_domains:
+                self.valid_binaryF_domains[_tmpidx] = 1
+        _tmpidx += 1
+
+        # -------------------------------
+        # Setup the initial weights
+        # This scaling factor :: 0.025 is important  - since it assigns importance.
+        # -------------------------------
+        self.binary_W = np.ones(self.total_entity_count) * 0.05
+
+        # This variable stores which of the entities have been marked 1 ( as in occurring as relevant )
+        # Initially everything is 0
+        self.entity_flag = [ np.zeros(dim) for dom,dim in domain_dims.items()]
+        return
+    # -----------------------
+    # label_flag is 0 or 1  : per sample
+    # -----------------------
+    def update_binary_VarW(self, X, label_flag):
+        label_flag = np.array(label_flag).reshape(-1)
+        for d_idx in range(self.num_domains):
+            if self.valid_binaryF_domains[d_idx] == 1:
+                _entity_idx = X[:, d_idx].reshape(-1) # _entity_idx is a slice along column
+                e_idx = []
+                # For each sample check if it is labelled 1
+                # Get the non zero entries
+
+                for j in range(label_flag.shape[0]):
+                    if label_flag[j] == 0: continue
+                    e_idx.append(_entity_idx[j])
+                self.entity_flag[d_idx][e_idx] = 1
+
+        return
+
+    # --------------------
+    # X_binary: shape [batch, num_domains]
+    # --------------------
+    def score_sample_bEF(self, X_binary):
+        # X_binary is in the form of [a,b,..]
+        # Where a ,b, c ... are the entity ids (non-serialized)
+        # Convert to one hot
+
+        X_binary_ohe = []
+        X_binary = np.array(X_binary)
+        for d_idx in range(self.num_domains):
+            _x_bd = np.array(
+                self.domain_oneHotEncoders[d_idx].transform(X_binary[:, d_idx].reshape(-1, 1)).todense()
+            )
+            _x_bd = _x_bd * self.valid_binaryF_domains[d_idx]
+            X_binary_ohe.append(_x_bd)
+
+        X_binary_ohe = np.concatenate(
+            X_binary_ohe,
+            axis=1).shape
+
+        # --------------------
+        # Multiply by weight
+        # X_binary_ohe : shape [ batch, #total entities ]
+        # binary_W : shape : [ batch, #total entities ]
+        # entity_validation_flag : [ batch, #total entities ]
+        # --------------------
+        entity_validation_flag = np.concatenate(
+            [np.array(_).reshape(1, -1) for _ in self.entity_flag], axis=1
+        )
+        binary_W = self.binary_W * entity_validation_flag
+        wx = X_binary_ohe * binary_W
+        return wx
 
 # ----------------------------------------------------------
 # X1 = np.random.normal(
