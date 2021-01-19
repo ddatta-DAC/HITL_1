@@ -122,6 +122,7 @@ def execute_with_input(
         check_next=20,
         batch_size=10
 ):
+    global domain_dims
     BATCH_SIZE = batch_size
     working_df['delta'] = 0
     obj = onlineGD(num_coeff, emb_dim)
@@ -131,7 +132,7 @@ def execute_with_input(
     max_num_batches = len(working_df) // BATCH_SIZE + 1
     acc = []
 
-
+    domain_list = list(domain_dims.keys())
     for batch_idx in tqdm(range(max_num_batches)):
 
         cur = working_df.head(BATCH_SIZE)
@@ -139,6 +140,8 @@ def execute_with_input(
         terms = []  # Explanation terms
 
         x = []
+        x_entityIds = []
+
         for i, row in cur.iterrows():
             _mask = np.zeros(len(domainInteraction_index))
             if row['label'] == 1:
@@ -150,6 +153,7 @@ def execute_with_input(
                 flags.append(0)
                 terms.append(())
             x.append(data_ID_to_matrix[row['PanjivaRecordID']])
+            x_entityIds.append( row[domain_list].values.tolist())
         if len(x) < 2:
             break
         x = np.array(x)
@@ -162,17 +166,18 @@ def execute_with_input(
 
         # Update weights
         clf_obj.update_W(_W)
-        clf_obj.update_binary_VarW(x, flags)
+        clf_obj.update_binary_VarW(x_entityIds, flags)
 
         working_df = working_df.iloc[BATCH_SIZE:]
         # Obtain scores
-        x_test = []
+        x_ij_test = []
+        x_entityIds = working_df[domain_list].values.astype(int)
         for _id in working_df['PanjivaRecordID'].values:
-            x_test.append(data_ID_to_matrix[_id])
-        x_test = np.array(x_test)
+            x_ij_test.append(data_ID_to_matrix[_id])
 
+        x_ij_test = np.array(x_ij_test)
 
-        new_scores = clf_obj.predict_score_op(x_test)
+        new_scores = clf_obj.predict_bEF( x_entityIds, x_ij_test )
         old_scores = working_df['cur_score'].values
         _delta = new_scores - old_scores
         working_df['delta'] = _delta
