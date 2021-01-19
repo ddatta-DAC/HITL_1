@@ -15,6 +15,7 @@ from joblib import wrap_non_picklable_objects
 from collections import OrderedDict
 from itertools import combinations
 # ======================================== #
+
 def gen_sample_aux(row, domain_values_dict, num_neg_samples):
     num_domains = len(domain_values_dict.keys())
     domains = list(domain_values_dict.keys())
@@ -185,6 +186,31 @@ def remove_spurious_coOcc(
     print(' Post check columns in target dataframe ::', target_df.columns)
     return target_df
 
+
+
+def convert_from_serialized(
+    target_df,
+    DIR,
+):
+    idMapping_df = fetch_idMappingFile(DIR)
+    mapping_dict = {}
+    
+    for domain in set(idMapping_df['domain']):
+        tmp =  idMapping_df.loc[(idMapping_df['domain'] == domain)]
+        serial_id = tmp['serial_id'].values.tolist()
+        entity_id = tmp['entity_id'].values.tolist()
+        mapping_dict[domain] = {
+            k:v for k,v in zip(serial_id, entity_id)
+        }
+    
+    def _aux( val, domain):
+        return mapping_dict[domain][val]
+    
+    for domain in set(idMapping_df['domain']):
+        target_df.loc[:, domain] = target_df[domain].apply(
+            _aux, args= (domain,)
+        )
+    return target_df
 
 def convert_to_UnSerializedID_format(
         target_df,
