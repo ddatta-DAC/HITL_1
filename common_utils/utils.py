@@ -211,3 +211,37 @@ def convert_from_serialized(
             _aux, args= (domain,)
         )
     return target_df
+
+def convert_to_UnSerializedID_format(
+        target_df,
+        DIR,
+        data_source_loc=None,
+):
+    if data_source_loc is None:
+        data_source_loc = './../generated_data_v1/'
+    loc = os.path.join(data_source_loc, DIR)
+    with open(os.path.join(loc, 'domain_dims.pkl'), 'rb') as fh:
+        domain_dims = OrderedDict(pickle.load(fh))
+
+    idMapper_file = os.path.join(loc, 'idMapping.csv')
+    idMapping_df = pd.read_csv(idMapper_file, index_col=None)
+
+
+    # Create a dictionary for Quick access : Serial id to Entity ids
+    mapping_dict = {}
+
+    for domain in set(idMapping_df['domain']):
+
+        tmp = idMapping_df.loc[(idMapping_df['domain'] == domain)]
+        serial_id = tmp['serial_id'].values.tolist()
+        entity_id = tmp['entity_id'].values.tolist()
+        mapping_dict[serial_id] = entity_id
+
+    # Convert
+    def convert_aux(val):
+        return mapping_dict[val]
+
+    for domain in tqdm(list(domain_dims.keys())):
+        target_df[domain] = target_df[domain].parallel_apply(convert_aux)
+
+    return target_df

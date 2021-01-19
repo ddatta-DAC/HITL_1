@@ -5,11 +5,12 @@ import numpy as np
 import os
 import sys
 import glob
-from sklearn.preprocessing import normalize
-sys.path.append('')
-sys.path.append('..')
-from pathlib import Path
 from tqdm import tqdm
+from sklearn.preprocessing import normalize
+sys.path.append('./.')
+sys.path.append('./..')
+from pathlib import Path
+
 import pickle
 import copy
 import json
@@ -22,6 +23,7 @@ from record import record_class
 import yaml
 import time
 from collections import OrderedDict
+from common_utils import utils
 
 explantions_file_path = None
 embedding_data_path =  None
@@ -112,9 +114,24 @@ def get_trained_classifier( X,y , num_domains, emb_dim, num_epochs=10000):
     classifier_obj.fit_on_pos( X, y, n_epochs=num_epochs//2, log_interval=1000)
     return classifier_obj
 
+
+def fetch_entityID_arr_byList(data_df, id_list):
+    global domain_dims
+    domain_list =  list(domain_dims.keys())
+    ID_COL = 'PanjivaRecordID'
+    data_df = data_df.copy(deep=True)
+    data_df = data_df.loc[data_df[ID_COL].isin(id_list)]
+    # Order of id_list has to be preserved!!!
+    X = []
+    for _id in id_list:
+        _tmp = data_df.loc[data_df[ID_COL]==_id][domain_list].iloc[0].values.tolist()
+        X.append(_tmp)
+    return np.array(X).astype(int)
+
 def execute_with_input(
         clf_obj,
         working_df,
+        ref_data_df,
         domainInteraction_index,
         num_coeff,
         emb_dim,
@@ -123,6 +140,7 @@ def execute_with_input(
         batch_size=10
 ):
     global domain_dims
+    ID_COL = 'PanjivaRecordID'
     BATCH_SIZE = batch_size
     working_df['delta'] = 0
     obj = onlineGD(num_coeff, emb_dim)
@@ -152,22 +170,13 @@ def execute_with_input(
             else:
                 flags.append(0)
                 terms.append(())
-<<<<<<< HEAD
-            x_ij.append(data_ID_to_matrix[row['PanjivaRecordID']])
+            id_value = row['PanjivaRecordID']
+            x_ij.append(data_ID_to_matrix[id_value])
             
-            row_dict = row.to_dict()
+            row_dict = ref_data_df.loc[(ref_data_df[ID_COL]==id_value)].iloc[0].to_dict()
             x_entityIds.append([row_dict[d] for d in domain_list])
         
         x_ij = np.array(x_ij)
-=======
-            x.append(data_ID_to_matrix[row['PanjivaRecordID']])
-            row_dict = row.to_dict()
-            x_entityIds.append( [row_dict[d] for d in domain_list])
-        if len(x) < 2:
-            break
-        x = np.array(x)
-
->>>>>>> 72a990c445e49110bba6f10947cf92b168224e51
         final_gradient, _W = obj.update_weight(
             flags,
             terms,
@@ -181,7 +190,10 @@ def execute_with_input(
         working_df = working_df.iloc[BATCH_SIZE:]
         # Obtain scores
         x_ij_test = []
-        x_entityIds = working_df[domain_list].values.astype(int)
+        x_entityIds = fetch_entityID_arr_byList (
+            ref_data_df,
+            working_df['PanjivaRecordID'].values.tolist()
+        )
         for _id in working_df['PanjivaRecordID'].values:
             x_ij_test.append(data_ID_to_matrix[_id])
 
@@ -245,8 +257,6 @@ def plot_figure( df1, df2 ):
     plt.close()
 
 
-
-
 def main_executor():
     global explantions_file_path
     global embedding_data_path
@@ -257,6 +267,7 @@ def main_executor():
     global test_data_serialized_loc
     global feedback_batch_size
     global top_K_count
+    global DIR
     # ============================================
     anom_pos_df = pd.read_csv(anomalies_pos_fpath, index_col=None)
     anom_neg_df = pd.read_csv(anomalies_neg_fpath, index_col=None)
@@ -266,7 +277,9 @@ def main_executor():
     serialID_to_entityID = get_serialID_to_entityID()
     record_class.__setup_embedding__(embedding_data_path, serialID_to_entityID, _normalize=True)
     emb_dim = record_class.embedding['HSCode'].shape[1]
-
+    # main_data_df has the records with entity ids
+    main_data_df = pd.concat([anom_pos_df, anom_neg_df], axis=0)
+    main_data_df = utils.convert_to_UnSerializedID_format( main_data_df, DIR)
     # -------------------------------------------
     obj_list = []
     for i in tqdm(range(anom_neg_df.shape[0])):
@@ -277,13 +290,12 @@ def main_executor():
         obj = record_class(anom_pos_df.iloc[i].to_dict(),1)
         obj_list.append(obj)
     
-    print(explantions_file_path)
-    print(os.getcwd())
+    print('Explanations fetched from :: ',explantions_file_path)
     # Read in the explantions
     with open(explantions_file_path,'rb') as fh:
         explanations = json.load(fh)
-    explanations = { int(k): [sorted (_) for _ in v] for k,v in explanations.items()}
 
+    explanations = { int(k): [sorted (_) for _ in v] for k,v in explanations.items()}
     num_domains = len(domain_dims)
     domain_idx = { e[0]:e[1] for e in enumerate(domain_dims.keys())}
 
@@ -304,6 +316,7 @@ def main_executor():
         data_id.append(_obj.id)
         data_label.append(_obj.label)
         data_ID_to_matrix[_obj.id] = _obj.x
+
     data_x = np.stack(data_x)
     data_label = np.array(data_label)
     data_id = np.array(data_id)
@@ -363,6 +376,7 @@ def main_executor():
     acc = execute_with_input(
             clf_obj = copy.deepcopy(classifier_obj),
             working_df = cur_df,
+            ref_data_df = main_data_df,
             domainInteraction_index = domainInteraction_index,
             num_coeff= num_coeff,
             emb_dim=emb_dim,
