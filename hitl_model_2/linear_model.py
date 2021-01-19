@@ -172,7 +172,7 @@ class linearClassifier_bEF(
         self.domain_oneHotEncoders = []
         for dom, dim in self.domain_dims.items():
             self.domain_oneHotEncoders += [OneHotEncoder().fit(np.arange(dim).reshape([-1, 1]))]
-        self.valid_binaryF_domains = np.zeros(len(self.num_domains))
+        self.valid_binaryF_domains = np.zeros([self.num_domains])
 
         _tmpidx = 0
         for dom, dim in self.domain_dims.items():
@@ -194,6 +194,7 @@ class linearClassifier_bEF(
     # label_flag is 0 or 1  : per sample
     # -----------------------
     def update_binary_VarW(self, X, label_flag):
+        
         label_flag = np.array(label_flag).reshape(-1)
         for d_idx in range(self.num_domains):
             if self.valid_binaryF_domains[d_idx] == 1:
@@ -205,6 +206,7 @@ class linearClassifier_bEF(
                 for j in range(label_flag.shape[0]):
                     if label_flag[j] == 0: continue
                     e_idx.append(_entity_idx[j])
+              
                 self.entity_flag[d_idx][e_idx] = 1
 
         return

@@ -1,6 +1,6 @@
 import os
 import argparse
-import system_run_v1 as main_module
+import system_run_v2 as main_module
 
 parser = argparse.ArgumentParser()
 import seaborn as sns
