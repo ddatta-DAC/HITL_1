@@ -152,12 +152,22 @@ def execute_with_input(
             else:
                 flags.append(0)
                 terms.append(())
+<<<<<<< HEAD
             x_ij.append(data_ID_to_matrix[row['PanjivaRecordID']])
             
             row_dict = row.to_dict()
             x_entityIds.append([row_dict[d] for d in domain_list])
         
         x_ij = np.array(x_ij)
+=======
+            x.append(data_ID_to_matrix[row['PanjivaRecordID']])
+            row_dict = row.to_dict()
+            x_entityIds.append( [row_dict[d] for d in domain_list])
+        if len(x) < 2:
+            break
+        x = np.array(x)
+
+>>>>>>> 72a990c445e49110bba6f10947cf92b168224e51
         final_gradient, _W = obj.update_weight(
             flags,
             terms,
