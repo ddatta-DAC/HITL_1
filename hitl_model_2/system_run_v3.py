@@ -16,7 +16,7 @@ import pickle
 import copy
 import json
 from onlineGD import onlineGD
-from loss_function_grad import maxDotProd_gradient
+from loss_function_grad import maxDotProd_gradient, calculate_cosineDist_gradient
 from linear_model_v2 import linearClassifier_bEF
 
 import seaborn as sns
@@ -153,7 +153,7 @@ def execute_with_input(
     ID_COL = 'PanjivaRecordID'
     BATCH_SIZE = batch_size
     working_df['delta'] = 0
-    OGD_obj = onlineGD(num_coeff, emb_dim, maxDotProd_gradient)
+    OGD_obj = onlineGD(num_coeff, emb_dim, calculate_cosineDist_gradient)
     W = clf_obj.W.cpu().data.numpy()
     OGD_obj.set_original_W(W)
 
@@ -202,6 +202,8 @@ def execute_with_input(
 
         x_entityIds = np.array(x_entityIds)
         x_ij = np.array(x_ij)
+        
+        
         final_gradient, _W = OGD_obj.update_weight(
             flags,
             terms,
