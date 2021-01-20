@@ -27,13 +27,15 @@ def gramSchmidt(V):
 
 # =====================================================================
 # Combine Projected GD and Confidence weighted GD
+# interaction_type :: Choices 'concat', 'mul' ; linear model
 # =====================================================================
 class onlineGD:
     def __init__(
             self,
             num_coeff,
             emb_dim,
-            _gradient_fn = None
+            _gradient_fn = None,
+            interaction_type = 'mul'
     ):
         self.num_coeff = num_coeff
         self.coeff_mask: ndarray = np.zeros(num_coeff)
@@ -48,6 +50,7 @@ class onlineGD:
         else:
             self.gradient_fn = _gradient_fn
         self.W_orig = None
+        self.interaction_type = interaction_type
         return
 
     def set_original_W(self, W):
@@ -93,7 +96,10 @@ class onlineGD:
 
         for i in range(num_inp_terms):
             for j in range(i + 1, num_inp_terms):
-                x_ij = x_split[i] * x_split[j]
+                if self.interaction_type == 'mul':
+                    x_ij = x_split[i] * x_split[j]
+                elif self.interaction_type == 'concat':
+                    x_ij = np.concatenate ( [x_split[i],x_split[j]] , axis= -1 )
                 x_features.append(x_ij)
         x_features = np.stack(x_features, axis=1)
 

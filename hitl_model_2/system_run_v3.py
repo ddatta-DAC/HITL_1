@@ -35,7 +35,7 @@ anomalies_pos_fpath = None
 anomalies_neg_fpath = None
 feedback_batch_size = None
 top_K_count = None
-
+interaction_type = 'concat'
 '''
 embedding_data_path  = './../../createGraph_trade/saved_model_data/{}'.format(DIR)
 serialID_mapping_loc = './../../generated_data_v1/{}/idMapping.csv'.format(DIR)
@@ -103,14 +103,14 @@ def obtain_normal_samples():
 
 def get_trained_classifier(X, y, num_domains, emb_dim, num_epochs=10000):
     global domain_dims
-
+    global interaction_type
     classifier_obj = linearClassifier_bEF(
         num_domains=num_domains,
         emb_dim=emb_dim,
         num_epochs=num_epochs,
         L2_reg_lambda=0.0025,
         force_reg=False,
-        interaction_type='concat'
+        interaction_type=interaction_type
     )
 
     classifier_obj.setup_binaryFeatures(
@@ -150,10 +150,11 @@ def execute_with_input(
         batch_size=10
 ):
     global domain_dims
+    global interaction_type
     ID_COL = 'PanjivaRecordID'
     BATCH_SIZE = batch_size
     working_df['delta'] = 0
-    OGD_obj = onlineGD(num_coeff, emb_dim, calculate_cosineDist_gradient)
+    OGD_obj = onlineGD(num_coeff, emb_dim, calculate_cosineDist_gradient, interaction_type = interaction_type)
     W = clf_obj.W.cpu().data.numpy()
     OGD_obj.set_original_W(W)
 
@@ -310,6 +311,7 @@ def main_executor():
     serialID_to_entityID = get_serialID_to_entityID()
     record_class.__setup_embedding__(embedding_data_path, serialID_to_entityID, _normalize=True)
     emb_dim = record_class.embedding['HSCode'].shape[1]
+
     # main_data_df has the records with entity ids
     main_data_df = pd.concat([anom_pos_df, anom_neg_df], axis=0)
     main_data_df = utils.convert_to_UnSerializedID_format(main_data_df, DIR)
