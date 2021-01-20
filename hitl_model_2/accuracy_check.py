@@ -48,6 +48,9 @@ def checkPerformance():
     plot_figure(df1, df2)
     return
 
+
+# ---------------------------------------------
+parser = argparse.parse_args()
 parser.add_argument(
     '--DIR',
     choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5', 'us_import6'],
@@ -70,11 +73,11 @@ main_module.DIR = args.DIR
 feedback_batch_size = args.feedback_size
 main_module.feedback_batch_size = args.feedback_size
 top_K_count = args.top_K
-main_module.top_K_count = top_K_count 
+main_module.top_K_count = top_K_count
 main_module.setup_config(main_module.DIR)
 
 figure_save_dir = 'accuracy_check'
 path_obj = Path(figure_save_dir)
-path_obj.mkdir(exist_ok=True,parents=True)
+path_obj.mkdir(exist_ok=True, parents=True)
 
 checkPerformance()
