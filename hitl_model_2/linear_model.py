@@ -186,7 +186,7 @@ class linearClassifier_bEF(
         # Setup the initial weights
         # This scaling factor :: 0.025 is important  - since it assigns importance.
         # -------------------------------
-        self.binary_W = np.ones(self.total_entity_count) * 0.05
+        self.binary_W = np.ones(self.total_entity_count) * 0.1
 
         # This variable stores which of the entities have been marked 1 ( as in occurring as relevant )
         # Initially everything is 0

@@ -24,7 +24,7 @@ import yaml
 import time
 from collections import OrderedDict
 from common_utils import utils
-
+from sklearn.utils import shuffle
 explantions_file_path = None
 embedding_data_path =  None
 serialID_mapping_loc = None
@@ -183,12 +183,15 @@ def execute_with_input(
             terms,
             x_ij
         )
-
-        # Update weights
+        # ----------------------------------------------------
+        # Update Model
+        # ----------------------------------------------------
         clf_obj.update_W(_W)
         clf_obj.update_binary_VarW(x_entityIds, flags)
-
-        working_df = working_df.iloc[BATCH_SIZE:]
+        
+        _tail_count = len(working_df) - BATCH_SIZE
+        working_df = working_df.tail(_tail_count).reset_index(drop=True)
+#         working_df = working_df.iloc[BATCH_SIZE:]
         if len(working_df) == 0 :
             break
         
@@ -272,9 +275,13 @@ def main_executor():
     global feedback_batch_size
     global top_K_count
     global DIR
+    
     # ============================================
+    print(anomalies_pos_fpath, anomalies_neg_fpath)
     anom_pos_df = pd.read_csv(anomalies_pos_fpath, index_col=None)
     anom_neg_df = pd.read_csv(anomalies_neg_fpath, index_col=None)
+    
+    
     # ============================================
     # setup objects
 
@@ -345,38 +352,42 @@ def main_executor():
 
     # classifier_obj.predict_score_op(X_0)
     # Create a referece dataframe  :: data_reference_df
-    working_df = pd.DataFrame(
+    data_reference_df = pd.DataFrame(
         data = np.vstack([data_id, data_label]).transpose(),
         columns=['PanjivaRecordID', 'label']
     )
-    working_df['baseID'] = working_df['PanjivaRecordID'].apply(lambda x : str(x)[:-3])
-    working_df['expl_1'] = -1
-    working_df['expl_2'] = -1
-    working_df['original_score'] = 1
+    data_reference_df['baseID'] = data_reference_df['PanjivaRecordID'].apply(lambda x : str(x)[:-3])
+    data_reference_df['expl_1'] = -1
+    data_reference_df['expl_2'] = -1
+    data_reference_df['original_score'] = 1
 
-    for i,row in working_df.iterrows():
+    for i,row in data_reference_df.iterrows():
         _id = int(row['PanjivaRecordID'])
         if _id in explanations.keys():
             entry = explanations[_id]
             domain_1 = entry[0][0]
             domain_2 = entry[0][1]
-            working_df.loc[i,'expl_1'] = domainInteraction_index['_'.join(sorted( [domain_1, domain_2]))]
+            data_reference_df.loc[i,'expl_1'] = domainInteraction_index['_'.join(sorted( [domain_1, domain_2]))]
             domain_1 = entry[1][0]
             domain_2 = entry[1][1]
-            working_df.loc[i,'expl_2'] = domainInteraction_index['_'.join(sorted( [domain_1, domain_2]))]
+            data_reference_df.loc[i,'expl_2'] = domainInteraction_index['_'.join(sorted( [domain_1, domain_2]))]
         _x = data_ID_to_matrix[_id]
-        working_df.loc[i,'original_score'] = classifier_obj.predict_score_op(np.array([_x]))[0]
+        data_reference_df.loc[i,'original_score'] = classifier_obj.predict_score_op(np.array([_x]))[0]
 
-    working_df['cur_score'] = working_df['original_score'].values
-    data_reference_df = working_df.copy()
+    data_reference_df['cur_score'] = data_reference_df['original_score'].values
 
     # To get random results
     results_with_input = pd.DataFrame(columns=['idx','acc'])
     results_no_input = pd.DataFrame(columns=['idx','acc'])
 
     cur_df = data_reference_df.copy()
+    from sklearn.utils import shuffle
     # Randomization
+    
     cur_df = cur_df.sample(frac=1).reset_index(drop=True)
+    cur_df = shuffle(cur_df).reset_index(drop=True)
+    print(cur_df.head(10)['PanjivaRecordID'])
+    
     acc = execute_with_input(
             clf_obj = copy.deepcopy(classifier_obj),
             working_df = cur_df,
@@ -388,6 +399,7 @@ def main_executor():
             check_next = top_K_count,
             batch_size = feedback_batch_size
     )
+    
     _tmpdf = pd.DataFrame( [(e[0],e[1]) for e in enumerate(acc)], columns=['idx','acc'] )
     results_with_input = results_with_input.append(
        _tmpdf, ignore_index=True
