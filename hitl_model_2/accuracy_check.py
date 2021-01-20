@@ -1,14 +1,10 @@
 import os
 import argparse
 import system_run_v2 as main_module
-
-parser = argparse.ArgumentParser()
 import seaborn as sns
 from matplotlib import pyplot as plt
 import time
 from pathlib import Path
-
-
 
 
 def plot_figure(df1, df2):

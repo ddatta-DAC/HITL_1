@@ -25,23 +25,16 @@ def gramSchmidt(V):
     return _basis.transpose()
 
 
-# -----------------------------------------------------
-# Reduce the avg cosine loss between W and (x1*x2)
-# Such that W. (x1x2) is maximized
-# -----------------------------------------------------
-def cosine_loss(X, Y):
-    xnorm = np.sqrt(np.sum(X * X))
-    ynorm = np.sqrt(np.sum(Y * Y))
-    similarity = np.sum(X * Y) / (xnorm * ynorm)
-    return 1 - similarity
-
-
 # =====================================================================
-# Combine Projected GD and Confidence weighted GD 
+# Combine Projected GD and Confidence weighted GD
 # =====================================================================
 class onlineGD:
-
-    def __init__(self, num_coeff, emb_dim):
+    def __init__(
+            self,
+            num_coeff,
+            emb_dim,
+            _gradient_fn = None
+    ):
         self.num_coeff = num_coeff
         self.coeff_mask: ndarray = np.zeros(num_coeff)
         self.prior_grad_vectors = {
@@ -49,7 +42,11 @@ class onlineGD:
         }
         self.W_cur = None
         self.emb_dim = emb_dim
-        self.gradient_fn = calculate_dotProd_gradient
+
+        if _gradient_fn is None:
+            self.gradient_fn = calculate_dotProd_gradient
+        else:
+            self.gradient_fn = _gradient_fn
         self.W_orig = None
         return
 
