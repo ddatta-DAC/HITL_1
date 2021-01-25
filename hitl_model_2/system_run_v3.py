@@ -436,8 +436,8 @@ def main_executor():
             pad = np.zeros([idx.shape[0] - next_K_precision.shape[0], next_K_precision.shape[1]])
             next_K_precision = np.concatenate([next_K_precision,pad],axis=0)
 
-        columns = ['idx'] + ['recall'] + ['Prec@next_' + '_' for _ in check_next_values]
-        _data = np.conacatenate([
+        columns = ['idx'] + ['recall'] + ['Prec@next_' + str(_) for _ in check_next_values]
+        _data = np.concatenate([
             idx.reshape([-1, 1]),
             recall.reshape([-1, 1]),
             next_K_precision,
@@ -447,8 +447,8 @@ def main_executor():
         )
         return result_df
 
-    results_with_input = aux_create_result_df(next_K_precision_wI, recall_wI)
-    results_no_input = aux_create_result_df(next_K_precision_nI, recall_nI)
+    results_with_input = aux_create_result_df(next_K_precision_wI, recall_wI, check_next_values)
+    results_no_input = aux_create_result_df(next_K_precision_nI, recall_nI, check_next_values)
     return results_with_input, results_no_input
 
 

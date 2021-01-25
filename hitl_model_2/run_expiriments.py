@@ -12,7 +12,7 @@ import system_run_v3 as main_module
 from time import time
 
 def getTimeStamp():
-    return str(time.time()).split('.')[0]
+    return str(time()).split('.')[0]
 
 def executor(_idx):
     results_with_input, results_no_input = main_module.main_executor()
@@ -22,10 +22,14 @@ def executor(_idx):
 
 def checkPerformance(num_runs):
     global DIR
-    with Pool(processes=num_runs) as pool:
-        process_list = [pool.apply_async(executor, (_idx)) for _idx in range(10)]
-        results = [_process.get() for _process in process_list]
-
+#     with Pool(processes=num_runs) as pool:
+#         process_list = [pool.apply_async(executor, (_idx,)) for _idx in range(10)]
+#         results = [_process.get() for _process in process_list]
+    results = []
+    for n in range(num_runs):
+        r = executor (n)
+        results.append(r)
+    
     # Join the result dataframes
     df_wI = None
     df_nI = None
