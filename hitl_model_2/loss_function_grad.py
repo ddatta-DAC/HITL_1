@@ -33,7 +33,7 @@ def cosine_loss(X, Y):
 # X is the input
 # gradient to be applied to W : W` = W-grad
 # ------------------
-def maxDotProd_gradient(X, W):
+def maxDotProd_gradient(W, X):
     d = np.dot(X, W) / np.linalg.norm(X) * X
     grad = W - d
     return -grad
