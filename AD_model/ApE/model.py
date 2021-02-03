@@ -6,8 +6,9 @@ from tqdm import tqdm
 import torch.nn.functional as F
 from torch import FloatTensor as FT
 
-
-
+'''
+https://arxiv.org/pdf/1608.07502.pdf
+'''
 class APE(nn.Module):
     def __init__(self, num_domains, emb_dim, domain_dims):
         super(APE, self).__init__()
