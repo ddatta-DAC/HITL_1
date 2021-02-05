@@ -102,6 +102,11 @@ parser.add_argument(
     default=0.001
 )
 
+parser.add_argument(
+    '--epochs',
+    default=100
+)
+
 args = parser.parse_args()
 DIR = args.DIR
 saved_model = args.saved_model
