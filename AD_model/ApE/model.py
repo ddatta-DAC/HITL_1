@@ -91,7 +91,7 @@ class APE_container:
         self.epoch_meanLoss_history = []
         return
 
-    def train_model(self, pos_x, neg_x, num_epochs = 50, log_interval = 100, tol = 0.05 ):
+    def train_model(self, pos_x, neg_x, num_epochs = 50, log_interval = 100, tol = 0.025 ):
         self.model.train()
         self.model.mode ='train'
         clip_value = 5
@@ -148,11 +148,24 @@ class APE_container:
         self.model.mode='test'
         return loss_history
 
-    def predict(self):
+    def predict(self, x_test):
         self.model.mode='test'
         self.model.eval()
-        
-        return 
+        bs = 495
+        results = []
+        num_batches = x_test.shape[0] // bs + 1
+        idx = np.arange(x_test.shape[0])
+        for b in range(num_batches):
+            b_idx = idx[b * bs:(b + 1) * bs]
+            if len(b_idx) == 0:
+                break
+
+            x = LT(x_test[b_idx]).to(self.device)
+            score_values = self.model(x)
+            vals = score_values.cpu().data.numpy().tolist()
+            results.extend(vals)
+
+        return results
     
     def save_model(self, loc=None):
         if loc is None:
@@ -171,10 +184,8 @@ class APE_container:
         print('Device', self.device)
         if path is None:
             path = self.save_path
-            
         self.model = APE(self.emb_dim, self.domain_dims)
         self.model.load_state_dict(torch.load(path))
         self.model.to(self.device)
         self.model.eval()
-
         return
