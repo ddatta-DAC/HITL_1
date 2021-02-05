@@ -12,17 +12,22 @@ import matplotlib.pyplot as plt
 import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 from pathlib import Path
+import sys
+sys.path.append('./..')
+sys.path.append('./../..')
+sys.path.append('./../../..')
+
 
 # ===================================== #
 
 def get_domain_dims(DIR):
-    with open('./../generated_data_v1/{}/domain_dims.pkl'.format(DIR), 'rb')  as fh:
+    with open('./../../generated_data_v1/{}/domain_dims.pkl'.format(DIR), 'rb')  as fh:
         domain_dims = pickle.load(fh)
     return domain_dims
 
 def get_training_data(DIR):
-    x_pos = np.load('./../generated_data_v1/{}/stage_2/train_x_pos.npy'.format(DIR))
-    x_neg = np.load('./../generated_data_v1/{}/stage_2/train_x_neg.npy'.format(DIR))
+    x_pos = np.load('./../../generated_data_v1/{}/stage_2/train_x_pos.npy'.format(DIR))
+    x_neg = np.load('./../../generated_data_v1/{}/stage_2/train_x_neg.npy'.format(DIR))
     return x_pos, x_neg
 
 # ===================================== #
@@ -45,6 +50,8 @@ def main(DIR, saved_model):
     else:
         saved_model_path = os.path.join('./saved_model/{}/{}'.format(DIR, saved_model))
         model.load_model(saved_model_path)
+    
+    return
 
     model.model.mode='test'
     test_df = pd.read_csv(
@@ -62,7 +69,7 @@ def main(DIR, saved_model):
     # -------------------------------------------------
     # Positive anomalies
 
-    anomalies_src_path = './../generated_data_v1/generated_anomalies/{}'.format(DIR)
+    anomalies_src_path = './../../generated_data_v1/generated_anomalies/{}'.format(DIR)
     test_df_p = pd.read_csv(os.path.join(anomalies_src_path, 'pos_anomalies.csv' ), index_col=None)
     id_list_p = test_df_p[ID_COL].values.tolist()
     del test_df_p[ID_COL]

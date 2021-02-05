@@ -18,19 +18,18 @@ sys.path.append('./../../..')
 
 ID_COL = 'PanjivaRecordID'
 RESULTS_OP_PATH = 'APE_output'
-
+DATALOC = './../../generated_data_v1'
 
 def get_domain_dims(DIR):
-    with open('./../../generated_data_v1/{}/domain_dims.pkl'.format(DIR), 'rb')  as fh:
+    global DATALOC
+    with open( os.path.join(DATALOC, '{}/domain_dims.pkl'.format(DIR)), 'rb')  as fh:
         domain_dims = pickle.load(fh)
     return domain_dims
 
 def get_training_data(DIR):
-    x_pos = np.load('./../../generated_data_v1/{}/stage_2/train_x_pos.npy'.format(DIR))
-    x_neg = np.load('./../../generated_data_v1/{}/stage_2/train_x_neg.npy'.format(DIR))
+    x_pos = np.load( os.path.join(DATALOC, '{}/stage_2/train_x_pos.npy'.format(DIR)))
+    x_neg = np.load( os.path.join(DATALOC, '{}/stage_2/train_x_neg.npy'.format(DIR)))
     return x_pos, x_neg
-
-
 
 def main(
         DIR = None,
@@ -39,7 +38,6 @@ def main(
         emb_dim = None,
         epochs = None
     ):
-    
     global ID_COL
     global RESULTS_OP_PATH
     RESULTS_OP_PATH = os.path.join(RESULTS_OP_PATH,DIR)
@@ -53,13 +51,18 @@ def main(
 
     model_obj = model.APE( emb_dim, domain_dims)
     container = model.APE_container(model_obj, device, batch_size= batch_size,  LR = lr)
-    loss = container.train_model(
-        x_pos, 
-        x_neg, 
-        num_epochs=epochs,
-        tol = 0.05
-    )
-    container.save_model()
+    
+    if saved_model is None:
+        loss = container.train_model(
+            x_pos, 
+            x_neg, 
+            num_epochs=epochs,
+            tol = 0.1
+        )
+        container.save_model('saved_model/{}'.format(DIR))
+    else:
+        saved_model_path = os.path.join('./saved_model/{}/{}'.format(DIR, saved_model))
+        container.load_model(saved_model_path)
     
     
     return
@@ -83,7 +86,7 @@ parser.add_argument(
 
 parser.add_argument(
     '--batch_size',
-    default = 128
+    default = 256
 )
 
 parser.add_argument(

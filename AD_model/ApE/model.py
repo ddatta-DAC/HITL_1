@@ -6,7 +6,10 @@ from tqdm import tqdm, trange
 import torch.nn.functional as F
 from torch import FloatTensor as FT
 from torch import LongTensor as LT
-import tqdm.notebook as tq
+try:
+    import tqdm.notebook as tq
+except:
+    pass
 from time import time
 '''
 https://arxiv.org/pdf/1608.07502.pdf
@@ -76,17 +79,18 @@ class APE(nn.Module):
         return self.obtain_score(x)
 
 class APE_container:
+    
     def __init__(self, model_obj, device, batch_size= 128, LR=0.0001 ):
-
         self.model_obj = model_obj
         self.device = device
         self.model_obj.to(self.device)
         self.optimizer = torch.optim.Adam(self.model_obj.parameters(), lr=LR)
         self.batch_size = batch_size
         self.signature = 'model_{}'.format(int(time()))
+        self.epoch_meanLoss_history = []
         return
 
-    def train_model(self, pos_x, neg_x, num_epochs =50, log_interval = 100, tol = 0.05 ):
+    def train_model(self, pos_x, neg_x, num_epochs = 50, log_interval = 100, tol = 0.1 ):
         self.model_obj.train()
         self.model_obj.mode ='train'
         clip_value = 5
@@ -94,7 +98,7 @@ class APE_container:
         idx = np.arange(pos_x.shape[0])
         num_batches = pos_x.shape[0]//bs +1
         loss_history  = []
-        epoch_meanLoss_history = []
+        
         for e in  range(num_epochs):
             epoch_loss = []
             np.random.shuffle(idx)
@@ -110,7 +114,6 @@ class APE_container:
                 pos_score, neg_score = self.model_obj(_x_pos, _x_neg)
                 # Calculate loss
                 term1 = torch.log(torch.sigmoid(torch.log(pos_score)))
-                
                 term2 = torch.log(torch.sigmoid(-torch.log(neg_score)))
                 term2 = torch.sum(term2, dim=-1)
                 
@@ -125,22 +128,21 @@ class APE_container:
                 pbar.set_postfix({'Batch ': b+1})
 #                 t.set_description('Epoch {} Batch {} Loss {:.4f}'.format(e,b+1, loss.cpu().data.numpy()), refresh=True)
                
-                
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model_obj.parameters(), clip_value)
                 self.optimizer.step()
             
-            epoch_meanLoss_history.append(np.mean(epoch_loss))
+            self.epoch_meanLoss_history.append(np.mean(epoch_loss))
             loss_history.extend(epoch_loss)
             print('Mean epoch loss {:.4f}'.format(np.mean(epoch_loss)))
             # ------------------
             # Early stopping
             # ------------------
-            if e > 10:
-                delta1 = abs(epoch_meanLoss_history[-2] - epoch_meanLoss_history[-1])
-                delta2 = abs(epoch_meanLoss_history[-3] - epoch_meanLoss_history[-2])
+            if len(self.epoch_meanLoss_history) > 10:
+                delta1 = abs(self.epoch_meanLoss_history[-2] - self.epoch_meanLoss_history[-1])
+                delta2 = abs(self.epoch_meanLoss_history[-3] - self.epoch_meanLoss_history[-2])
 
-                if  delta2 < tol and delta1 < tol:
+                if  delta2 <= tol and delta1 <= tol:
                     print('Stopping!')
            
         self.model_obj.mode='test'
