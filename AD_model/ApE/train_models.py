@@ -97,10 +97,6 @@ parser.add_argument(
     default=16
 )
 
-parser.add_argument(
-    '--lr',
-    default=0.001
-)
 
 parser.add_argument(
     '--epochs',
