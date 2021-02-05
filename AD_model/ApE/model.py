@@ -11,6 +11,7 @@ try:
 except:
     pass
 from time import time
+from pathlib import Path
 '''
 https://arxiv.org/pdf/1608.07502.pdf
 '''
@@ -83,7 +84,7 @@ class APE_container:
     def __init__(self, emb_dim, domain_dims, device, batch_size= 128, LR=0.0001 ):
         self.model = APE(emb_dim, domain_dims)
         self.device = device
-        self.model_obj.to(self.device)
+        self.model.to(self.device)
         self.optimizer = torch.optim.Adam(self.model_obj.parameters(), lr=LR)
         self.batch_size = batch_size
         self.signature = 'model_{}_{}'.format(emb_dim,int(time()))
@@ -111,7 +112,7 @@ class APE_container:
                 _x_neg = neg_x[_idx]
                 _x_pos = LT(_x_pos).to(self.device)
                 _x_neg = LT(_x_neg).to(self.device)
-                pos_score, neg_score = self.model_obj(_x_pos, _x_neg)
+                pos_score, neg_score = self.model(_x_pos, _x_neg)
                 # Calculate loss
                 term1 = torch.log(torch.sigmoid(torch.log(pos_score)))
                 term2 = torch.log(torch.sigmoid(-torch.log(neg_score)))
@@ -127,7 +128,7 @@ class APE_container:
                 tqdm._instances.clear()
                 pbar.set_postfix({'Batch ': b+1})
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model_obj.parameters(), clip_value)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), clip_value)
                 self.optimizer.step()
             
             self.epoch_meanLoss_history.append(np.mean(epoch_loss))
@@ -170,7 +171,7 @@ class APE_container:
         if path is None:
             path = self.save_path
             
-        self.model = APE(emb_dim, domain_dims)
+        self.model = APE(self.emb_dim, self.domain_dims)
         self.model.load_state_dict(torch.load(path))
         self.model.to(self.device)
         self.model.eval()
