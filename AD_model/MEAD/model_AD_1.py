@@ -59,12 +59,12 @@ class AD(nn.Module):
 
 class AD_model_container():
 
-    def __init__(self, entity_count, emb_dim, device ):
+    def __init__(self, entity_count, emb_dim, device , lr = 0.0005):
         self.model = AD ( entity_count, emb_dim, device)
         self.device = device
         print('Device', self.device)
         self.model.to(self.device)
-        
+        self.lr = lr
         self.entity_count = entity_count
         self.emb_dim = emb_dim
         self.signature = 'model_{}_{}'.format(emb_dim,int(time()))
@@ -74,7 +74,7 @@ class AD_model_container():
     def train_model(self, train_x_pos, train_x_neg, batch_size = 512, epochs = 10, log_interval=100):
         self.model.mode = 'train'
         bs = batch_size
-        opt = torch.optim.Adam( list(self.model.parameters()) )
+        opt = torch.optim.Adam( list(self.model.parameters()), lr = self.lr)
         num_batches = train_x_pos.shape[0] // bs + 1
         idx = np.arange(train_x_pos.shape[0])
         loss_value_history = []

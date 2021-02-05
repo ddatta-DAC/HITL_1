@@ -44,6 +44,7 @@ def main(DIR, saved_model):
     domain_dims = get_domain_dims(DIR)
     total_entity_count = sum(domain_dims.values())
     model = AD.AD_model_container(total_entity_count, emb_dim=16, device=device)
+    
     if saved_model is None:
         model.train_model(x_pos,x_neg, batch_size=128, epochs=50)
         model.save_model('saved_model/{}'.format(DIR))
