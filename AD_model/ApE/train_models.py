@@ -115,7 +115,7 @@ saved_model = args.saved_model
 batch_size = args.batch_size
 emb_dim = args.emb_dim
 epochs = args.epochs
-print(args.emb_dim, type(emb_dim))
+
 main(
     DIR=DIR,
     lr=lr,

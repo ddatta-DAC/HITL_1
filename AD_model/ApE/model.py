@@ -143,6 +143,7 @@ class APE_container:
 
                 if  delta2 <= tol and delta1 <= tol:
                     print('Stopping!')
+                    break
            
         self.model.mode='test'
         return loss_history
@@ -161,7 +162,7 @@ class APE_container:
         loc = os.path.join(loc, self.signature )
         self.save_path = loc
         torch.save(self.model.state_dict(), loc)
-
+        return
 
     def load_model(self, path = None):
         if self.save_path is None and path is None:
@@ -175,4 +176,5 @@ class APE_container:
         self.model.load_state_dict(torch.load(path))
         self.model.to(self.device)
         self.model.eval()
+
         return

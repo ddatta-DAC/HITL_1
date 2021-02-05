@@ -59,7 +59,7 @@ def main(
     total_entity_count = sum(domain_dims.values())
     model = AD.AD_model_container(total_entity_count, emb_dim=emb_dim, device=device, lr= lr)
     model.train_model(x_pos, x_neg, batch_size=batch_size, epochs=epochs)
-    model.save_model(os.apth.join(saved_model_dir,'/{}'.format(DIR)))
+    model.save_model(os.path.join(saved_model_dir,'/{}'.format(DIR)))
     return
 
 
@@ -75,26 +75,30 @@ parser.add_argument(
     '--saved_model',
     default=None
 )
+
 parser.add_argument(
     '--lr',
-    default=0.001
+    default=0.001,
+    type=float
 )
 
 parser.add_argument(
     '--batch_size',
-    default=128
+    default=256,
+    type=int
 )
 
 parser.add_argument(
     '--emb_dim',
-    default=16
+    default=16,
+    type=int
 )
 
 parser.add_argument(
     '--epochs',
-    default=100
+    default=100,
+    type=int
 )
-
 
 args = parser.parse_args()
 DIR = args.DIR
@@ -105,6 +109,7 @@ saved_model = args.saved_model
 batch_size = args.batch_size
 emb_dim = args.emb_dim
 epochs = args.epochs
+
 main(
     DIR=DIR,
     lr=lr,
