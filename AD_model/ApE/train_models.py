@@ -84,23 +84,26 @@ parser.add_argument(
 )
 parser.add_argument(
     '--lr',
-    default=0.001
+    default=0.001,
+    type=float
 )
 
 parser.add_argument(
     '--batch_size',
-    default=256
+    default=256,
+    type=int
 )
 
 parser.add_argument(
     '--emb_dim',
-    default=16
+    default=16,
+    type=int
 )
-
 
 parser.add_argument(
     '--epochs',
-    default=100
+    default=100,
+    type=int
 )
 
 args = parser.parse_args()
@@ -112,6 +115,7 @@ saved_model = args.saved_model
 batch_size = args.batch_size
 emb_dim = args.emb_dim
 epochs = args.epochs
+print(args.emb_dim, type(emb_dim))
 main(
     DIR=DIR,
     lr=lr,
