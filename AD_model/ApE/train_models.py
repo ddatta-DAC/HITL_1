@@ -58,7 +58,7 @@ def main(
     x_neg = x_neg.reshape([x_pos.shape[0], -1, x_pos.shape[1]])
     domain_dims = get_domain_dims(DIR)
 
-    container = APE.model.APE_container(emb_dim, domain_dims, device, batch_size=batch_size, LR=lr)
+    container = APE.APE_container(emb_dim, domain_dims, device, batch_size=batch_size, LR=lr)
 
     loss = container.train_model(
         x_pos,
