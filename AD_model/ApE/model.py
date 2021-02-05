@@ -85,7 +85,7 @@ class APE_container:
         self.model = APE(emb_dim, domain_dims)
         self.device = device
         self.model.to(self.device)
-        self.optimizer = torch.optim.Adam(self.model_obj.parameters(), lr=LR)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LR)
         self.batch_size = batch_size
         self.signature = 'model_{}_{}'.format(emb_dim,int(time()))
         self.epoch_meanLoss_history = []
@@ -100,7 +100,7 @@ class APE_container:
         num_batches = pos_x.shape[0]//bs +1
         loss_history  = []
         
-        for e in  range(num_epochs):
+        for e in range(num_epochs):
             epoch_loss = []
             np.random.shuffle(idx)
             pbar = tqdm(range(num_batches))
@@ -160,7 +160,7 @@ class APE_container:
         path_obj.mkdir(parents=True, exist_ok=True)
         loc = os.path.join(loc, self.signature )
         self.save_path = loc
-        torch.save(self.model_obj.state_dict(), loc)
+        torch.save(self.model.state_dict(), loc)
 
 
     def load_model(self, path = None):
