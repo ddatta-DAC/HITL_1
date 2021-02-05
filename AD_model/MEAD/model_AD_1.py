@@ -13,8 +13,6 @@ from time import time
 import os
 from pathlib import Path
 
-
-
 class AD(nn.Module):
     def __init__(self, num_entities, emb_dim , device):
         super(AD, self).__init__()
@@ -23,7 +21,6 @@ class AD(nn.Module):
         self.emb = nn.Embedding(num_entities,emb_dim)
         self.mode = 'train'
         return
-
 
     def calc_score(self, x, neg_sample=False):
         x = self.emb(x)
@@ -151,6 +148,8 @@ class AD_model_container():
         self.model.eval()
         return
 
+    def predict(self,x_test):
+        return self.score_samples(x_test)
 
 
 
