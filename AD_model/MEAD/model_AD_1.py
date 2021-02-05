@@ -59,7 +59,7 @@ class AD(nn.Module):
 
 class AD_model_container():
 
-    def __init__(self, entity_count, emb_dim, device , lr = 0.0005):
+    def __init__(self, entity_count, emb_dim, device, lr = 0.0005):
         self.model = AD ( entity_count, emb_dim, device)
         self.device = device
         print('Device', self.device)
@@ -69,30 +69,54 @@ class AD_model_container():
         self.emb_dim = emb_dim
         self.signature = 'model_{}_{}'.format(emb_dim,int(time()))
         self.save_path = None
+        self.epoch_meanLoss_history = []
         return
 
-    def train_model(self, train_x_pos, train_x_neg, batch_size = 512, epochs = 10, log_interval=100):
+    def train_model(self, train_x_pos, train_x_neg, batch_size = 512, epochs = 10, log_interval=100, tol = 0.025):
         self.model.mode = 'train'
         bs = batch_size
         opt = torch.optim.Adam( list(self.model.parameters()), lr = self.lr)
         num_batches = train_x_pos.shape[0] // bs + 1
         idx = np.arange(train_x_pos.shape[0])
         loss_value_history = []
-        
+        clip_value = 5
+        loss_history = []
+
+
         for e in tqdm(range(epochs)):
             np.random.shuffle(idx)
-            for b in range(num_batches):
+            epoch_loss =[]
+            pbar = tqdm(range(num_batches))
+            for b in pbar:
                 opt.zero_grad()
                 b_idx = idx[b*bs:(b+1)*bs]
                 x_p = LT(train_x_pos[b_idx]).to(self.device)
                 x_n = LT(train_x_neg[b_idx]).to(self.device)
                 
-                loss = -self.model(x_p,x_n)
+                loss = -self.model(x_p, x_n)
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), clip_value)
                 opt.step()
                 loss_value_history.append(loss.cpu().data.numpy().tolist())
+                tqdm._instances.clear()
+                pbar.set_postfix({'Batch ': b + 1})
                 if b % log_interval == 0 :
-                    print('Epoch {}  batch {} Loss {:4f}'.format(e,b, loss.cpu().data.numpy()))
+                    print('Epoch {}  batch {} Loss {:4f}'.format(e, b, loss.cpu().data.numpy()))
+                epoch_loss.append(loss.cpu().data.numpy())
+
+            self.epoch_meanLoss_history.append(np.mean(epoch_loss))
+            loss_history.extend(epoch_loss)
+            print('Mean epoch loss {:.4f}'.format(np.mean(epoch_loss)))
+
+            if len(self.epoch_meanLoss_history) > 10:
+                delta1 = abs(self.epoch_meanLoss_history[-2] - self.epoch_meanLoss_history[-1])
+                delta2 = abs(self.epoch_meanLoss_history[-3] - self.epoch_meanLoss_history[-2])
+
+                if delta2 <= tol and delta1 <= tol:
+                    print('Stopping!')
+                    break
+
+
         try:
             import matplotlib.pyplot as plt
             y = loss_value_history
