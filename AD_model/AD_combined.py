@@ -16,7 +16,7 @@ from common_utils import borda_count
 ID_COL = 'PanjivaRecordID'
 DATA_LOC = './../generated_data_v1'
 config = None
-
+DIR = 'us_import1'
 
 def get_domain_dims(DIR):
     global DATA_LOC
@@ -67,18 +67,28 @@ def main():
     test_x_Neg = test_df_n.values
     # scores_3 = model.score_samples(test_xn)
 
-    for model_type, model_list in config['models']:
+    for model_type, _list in config['models']:
 
         if model_type == 'ape':
-            model_container_obj = ape_model.APE_container(
-                emb_dim=emb_dim,
-                domain_dims=domain_dims
-            )
+            for _dict in _list:
+                emb_dim = _list['emb_list']
+                model_container_obj = ape_model.APE_container(
+                    emb_dim=emb_dim,
+                    domain_dims=domain_dims
+                )
+                model_container_obj.load_model(_dict['file'])
+
         if model_type == 'mead':
-            model_container_obj = mead_model.AD_model_container(
-                emb_dim=emb_dim,
-                entity_count = entity_count
-            )
+            for _dict in _list:
+                emb_dim = _list['emb_list']
+                model_container_obj = mead_model.AD_model_container(
+                    emb_dim=emb_dim,
+                    entity_count = entity_count
+                )
+                model_container_obj.load_model(_dict['file'])
+
+
+
 
     # label_list_normal = [0 for _ in range(len(scores_1))]
     # label_list_p = [1 for _ in range(len(scores_2))]
@@ -88,3 +98,5 @@ def main():
     # labels = label_list_normal + label_list_p + label_list_n
     # data = {'label': labels, 'score': scores , 'PanjivaRecordID': id_list}
     # df = pd.DataFrame(data)
+setup_up(DIR)
+print(config)

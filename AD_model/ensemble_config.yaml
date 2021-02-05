@@ -1,6 +1,14 @@
 us_import1:
-  'ape': null
-  'mead': null
+  'ape':
+    - 'emb_dim' : 16
+      'file': null
+    - 'emb_dim': 16
+      'file': null
+  'mead':
+    - 'emb_dim': 24
+      'file': null
+    - 'emb_dim': 32
+      'file': null
 us_import2:
   'ape': null
   'mead': null

@@ -67,7 +67,7 @@ class AD_model_container():
         
         self.entity_count = entity_count
         self.emb_dim = emb_dim
-        self.signature = 'model_{}_{}'.format(entity_count,int(time()))
+        self.signature = 'model_{}_{}'.format(emb_dim,int(time()))
         self.save_path = None
         return
 

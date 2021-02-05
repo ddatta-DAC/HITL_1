@@ -86,7 +86,7 @@ class APE_container:
         self.model_obj.to(self.device)
         self.optimizer = torch.optim.Adam(self.model_obj.parameters(), lr=LR)
         self.batch_size = batch_size
-        self.signature = 'model_{}'.format(int(time()))
+        self.signature = 'model_{}_{}'.format(emb_dim,int(time()))
         self.epoch_meanLoss_history = []
         return
 
@@ -126,8 +126,6 @@ class APE_container:
                 epoch_loss.append(np.mean(loss.cpu().data.numpy()))
                 tqdm._instances.clear()
                 pbar.set_postfix({'Batch ': b+1})
-#                 t.set_description('Epoch {} Batch {} Loss {:.4f}'.format(e,b+1, loss.cpu().data.numpy()), refresh=True)
-               
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model_obj.parameters(), clip_value)
                 self.optimizer.step()
