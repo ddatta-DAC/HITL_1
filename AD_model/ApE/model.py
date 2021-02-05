@@ -80,8 +80,8 @@ class APE(nn.Module):
 
 class APE_container:
     
-    def __init__(self, model_obj, device, batch_size= 128, LR=0.0001 ):
-        self.model_obj = model_obj
+    def __init__(self, emb_dim, domain_dims, device, batch_size= 128, LR=0.0001 ):
+        self.model = APE(emb_dim, domain_dims)
         self.device = device
         self.model_obj.to(self.device)
         self.optimizer = torch.optim.Adam(self.model_obj.parameters(), lr=LR)
@@ -91,8 +91,8 @@ class APE_container:
         return
 
     def train_model(self, pos_x, neg_x, num_epochs = 50, log_interval = 100, tol = 0.1 ):
-        self.model_obj.train()
-        self.model_obj.mode ='train'
+        self.model.train()
+        self.model.mode ='train'
         clip_value = 5
         bs = self.batch_size
         idx = np.arange(pos_x.shape[0])
@@ -145,10 +145,13 @@ class APE_container:
                 if  delta2 <= tol and delta1 <= tol:
                     print('Stopping!')
            
-        self.model_obj.mode='test'
+        self.model.mode='test'
         return loss_history
 
     def predict(self):
+        self.model.mode='test'
+        self.model.eval()
+        
         return 
     
     def save_model(self, loc=None):
@@ -168,9 +171,9 @@ class APE_container:
         print('Device', self.device)
         if path is None:
             path = self.save_path
-        self.model = AD( emb_dim=self.emb_dim, num_entities=self.entity_count,device=self.device)
-        
-        self.model_obj.load_state_dict(torch.load(path))
-        self.model_obj.to(self.device)
+            
+        self.model = APE(emb_dim, domain_dims)
+        self.model.load_state_dict(torch.load(path))
+        self.model.to(self.device)
         self.model.eval()
         return

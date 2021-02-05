@@ -38,6 +38,7 @@ def main(
         emb_dim = None,
         epochs = None
     ):
+    
     global ID_COL
     global RESULTS_OP_PATH
     RESULTS_OP_PATH = os.path.join(RESULTS_OP_PATH,DIR)
@@ -49,8 +50,8 @@ def main(
     domain_dims = get_domain_dims(DIR)
     total_entity_count = sum(domain_dims.values())
 
-    model_obj = model.APE( emb_dim, domain_dims)
-    container = model.APE_container(model_obj, device, batch_size= batch_size,  LR = lr)
+    model = model.APE(emb_dim, domain_dims)
+    container = model.APE_container(model, device, batch_size= batch_size,  LR = lr)
     
     if saved_model is None:
         loss = container.train_model(
