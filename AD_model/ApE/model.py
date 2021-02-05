@@ -91,7 +91,7 @@ class APE_container:
         self.epoch_meanLoss_history = []
         return
 
-    def train_model(self, pos_x, neg_x, num_epochs = 50, log_interval = 100, tol = 0.1 ):
+    def train_model(self, pos_x, neg_x, num_epochs = 50, log_interval = 100, tol = 0.05 ):
         self.model.train()
         self.model.mode ='train'
         clip_value = 5
