@@ -1,9 +1,10 @@
 import os
 import pandas as pd
 import sys
-
+import torch
 sys.path.append('./..')
 sys.path.append('./../..')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 import numpy as np
 import pickle
@@ -18,9 +19,10 @@ DATA_LOC = './../generated_data_v1'
 config = None
 DIR = 'us_import1'
 
-def get_domain_dims(DIR):
+def get_domain_dims():
     global DATA_LOC
-    with open(os.apth.join(DATA_LOC, '{}/domain_dims.pkl'.format(DIR)), 'rb')  as fh:
+    global DIR
+    with open(os.path.join(DATA_LOC, '{}/domain_dims.pkl'.format(DIR)), 'rb')  as fh:
         domain_dims = pickle.load(fh)
     return domain_dims
 
@@ -37,11 +39,13 @@ def main():
     global DIR
     global config
     global ID_COL
+    global DATA_LOC
+    global device
     test_df = pd.read_csv(
-        os.path.join(DATA_LOC, '/{}/stage_2/test_serialized.csv'.format(DIR)),
+        os.path.join(DATA_LOC, '{}/stage_2/test_serialized.csv'.format(DIR)),
         index_col=None
     )
-    domain_dims = get_domain_dims(DIR)
+    domain_dims = get_domain_dims()
     entity_count = sum(domain_dims.values())
     id_list_normal = test_df[ID_COL].values.tolist()
     del test_df[ID_COL]
@@ -66,37 +70,90 @@ def main():
 
     test_x_Neg = test_df_n.values
     # scores_3 = model.score_samples(test_xn)
-
-    for model_type, _list in config['models']:
-
-        if model_type == 'ape':
-            for _dict in _list:
-                emb_dim = _list['emb_list']
+    
+    label_list_normal = [0 for _ in range(test_x.shape[0])]
+    label_list_p = [1 for _ in range(test_x_Pos.shape[0])]
+    label_list_n = [-1 for _ in range(test_x_Neg.shape[0])]
+    
+    list_indiv_ranks = []
+    for model_type, _list in config.items():
+        model_container_obj =None
+        print(model_type)
+        for _dict in _list:
+            emb_dim = _dict['emb_dim']
+            if model_type == 'ape':
                 model_container_obj = ape_model.APE_container(
                     emb_dim=emb_dim,
+                    device=device,
                     domain_dims=domain_dims
                 )
-                model_container_obj.load_model(_dict['file'])
+                _path = os.path.join('ApE','saved_model', DIR, _dict['file'])
+                print(_path)
+                model_container_obj.load_model(_path)
 
-        if model_type == 'mead':
-            for _dict in _list:
-                emb_dim = _list['emb_list']
+            elif model_type == 'mead':
                 model_container_obj = mead_model.AD_model_container(
                     emb_dim=emb_dim,
+                    device=device,
                     entity_count = entity_count
                 )
-                model_container_obj.load_model(_dict['file'])
+                _path = os.path.join('MEAD','saved_model', DIR, _dict['file'])
+                print(_path)
+                model_container_obj.load_model(_path)
+            scores_normal = model_container_obj.predict(test_x)
+            scores_pos_anom = model_container_obj.predict(test_x_Pos)
+            scores_neg_anom = model_container_obj.predict(test_x_Neg)
+            scores = scores_normal + scores_pos_anom + scores_neg_anom
+            labels = label_list_normal + label_list_p + label_list_n
+            id_list = id_list_normal + id_list_Pos + id_list_Neg
+            
+            scores = scores_normal + scores_pos_anom  
+            labels = label_list_normal + label_list_p 
+            id_list = id_list_normal + id_list_Pos 
+            
+            data = {'label': labels, 'score': scores , 'PanjivaRecordID': id_list}
+            df = pd.DataFrame(data)
+            df = df.sort_values(by='score')
 
+            # Check performance
+            for k in [2,4,5]:
+                tmp = df.head(int(df.shape[0]*k/100))
+                prec1 = len(tmp.loc[tmp['label']!=0])/len(tmp)
+                prec2 = len(tmp.loc[tmp['label']==1])/len(tmp)
+                recall_1 = len(tmp.loc[tmp['label']!=0])/len(label_list_p)
+                recall_2 = len(tmp.loc[tmp['label']==1])/len(label_list_p)
+                print( k/100, 'Precision:', prec1, prec2 ,' | Recall :', recall_1,recall_2)
+            
+            if model_type == 'mead' or True:
+                list_indiv_ranks.append(df[ID_COL].values.tolist())
+    
+    print('-----')
+    combined_rank = borda_count.borda_count(list_indiv_ranks)
+    combined_rank = combined_rank.rename(columns={'ID':ID_COL})
+    labels = label_list_normal + label_list_p + label_list_n
+    id_list = id_list_normal + id_list_Pos + id_list_Neg
+    
+ 
+    labels = label_list_normal + label_list_p 
+    id_list = id_list_normal + id_list_Pos 
+            
+    data = { 'label': labels,  'PanjivaRecordID': id_list}
+    _df = pd.DataFrame(data)
+    _df = _df.merge(combined_rank, on=[ID_COL], how ='inner')
+    _df = _df.sort_values(by='rank', ascending=False)
+    for k in [2,4,5]:
+        tmp = _df.head(int(_df.shape[0]*k/100))
+        prec1 = len(tmp.loc[tmp['label']!=0])/len(tmp)
+        prec2 = len(tmp.loc[tmp['label']==1])/len(tmp)
+        recall_1 = len(tmp.loc[tmp['label']!=0])/len(label_list_p)
+        recall_2 = len(tmp.loc[tmp['label']==1])/len(label_list_p)
+        print( k/100, 'Precision:', prec1, prec2 ,' | Recall :', recall_1,recall_2)
 
-
-
-    # label_list_normal = [0 for _ in range(len(scores_1))]
-    # label_list_p = [1 for _ in range(len(scores_2))]
-    # label_list_n = [-1 for _ in range(len(scores_3))]
-    # scores = scores_1 + scores_2 + scores_3
+                
     # id_list = id_list_normal + id_list_p + id_list_n
     # labels = label_list_normal + label_list_p + label_list_n
     # data = {'label': labels, 'score': scores , 'PanjivaRecordID': id_list}
     # df = pd.DataFrame(data)
 setup_up(DIR)
 print(config)
+main()

@@ -13,11 +13,11 @@ def borda_count(object_list=None):
     ranks = np.arange(1,_len_+1).astype(float).tolist()[::-1]
     master  = None
     for _list in object_list:
-        _df = pd.DataFrame(data = np.stack([np.reshape(x1,[-1]) , np.reshape(vals,[-1])] ,axis=1), columns= ['ID','rank'])
+        _df = pd.DataFrame(data = np.stack([np.reshape(_list,[-1]) , np.reshape(ranks,[-1])] ,axis=1), columns= ['ID','rank'])
         if master is None:
             master = _df
         else:
-            master = master.append(master, ignore_index=True)
+            master = master.append(_df, ignore_index=True)
     df = master.groupby('ID').sum().reset_index()
     df = df.sort_values(by='rank', ascending=False)
     _min = min(df['rank'])
@@ -30,7 +30,7 @@ def test():
     x2 = np.arange(1,11).astype(int)
     np.random.shuffle(x1)
     np.random.shuffle(x2)
-    result = main([x1,x2])
+    result = borda_count([x1,x2])
     return result
 
 # test()

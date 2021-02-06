@@ -1,14 +1,19 @@
 us_import1:
   'ape':
+    - 'emb_dim' : 12
+      'file': 'model_12_1612559773'
     - 'emb_dim' : 16
-      'file': null
-    - 'emb_dim': 16
-      'file': null
+      'file': 'model_16_1612559780'
   'mead':
-    - 'emb_dim': 24
-      'file': null
-    - 'emb_dim': 32
-      'file': null
+    - 'emb_dim' : 16
+      'file': 'model_16_1612559651'
+    - 'emb_dim' : 12
+      'file': 'model_12_1612559784'
+    - 'emb_dim' : 20
+      'file' : 'model_20_1612580597'
+    - 'emb_dim' : 24
+      'file' : 'model_24_1612581257'  
+    
 us_import2:
   'ape': null
   'mead': null
