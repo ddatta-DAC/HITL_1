@@ -19,7 +19,7 @@ https://arxiv.org/pdf/1608.07502.pdf
 class APE(nn.Module):
     def __init__(self, emb_dim, domain_dims):
         super(APE, self).__init__()
-
+        self.save_path = None
         self.num_domains = len(domain_dims)
         self.emb_dim = emb_dim
 
@@ -31,7 +31,7 @@ class APE(nn.Module):
         )
        
         self.c = nn.Parameter(torch.from_numpy(np.random.random(1)))
-      
+        self.mode='train'
         k = 0
 
         self.pair_W = nn.ParameterDict({})
@@ -55,7 +55,6 @@ class APE(nn.Module):
                 _score.append(r)
         _score = torch.cat(_score, dim=-1)
         score = torch.exp(torch.sum(_score,dim=-1) + self.c)
-        self.mode = 'train'
         return score
 
     # Expect entitty ids to be serialized
@@ -84,11 +83,14 @@ class APE_container:
     def __init__(self, emb_dim, domain_dims, device, batch_size= 128, LR=0.0001 ):
         self.model = APE(emb_dim, domain_dims)
         self.device = device
+        self.emb_dim = emb_dim
+        self.domain_dims = domain_dims
         self.model.to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LR)
         self.batch_size = batch_size
         self.signature = 'model_{}_{}'.format(emb_dim,int(time()))
         self.epoch_meanLoss_history = []
+        self.save_path = None
         return
 
     def train_model(self, pos_x, neg_x, num_epochs = 50, log_interval = 100, tol = 0.025 ):
@@ -187,5 +189,6 @@ class APE_container:
         self.model = APE(self.emb_dim, self.domain_dims)
         self.model.load_state_dict(torch.load(path))
         self.model.to(self.device)
+        self.model.mode =='test'
         self.model.eval()
         return

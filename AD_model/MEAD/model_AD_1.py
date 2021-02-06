@@ -62,7 +62,7 @@ class AD_model_container():
     def __init__(self, entity_count, emb_dim, device, lr = 0.0005):
         self.model = AD ( entity_count, emb_dim, device)
         self.device = device
-        print('Device', self.device)
+        
         self.model.to(self.device)
         self.lr = lr
         self.entity_count = entity_count
@@ -134,15 +134,16 @@ class AD_model_container():
     def score_samples(self, x_test):
         bs = 507
         results = []
-        print(type(x_test), x_test.shape)
+       
         num_batches = x_test.shape[0] // bs + 1
         idx = np.arange(x_test.shape[0])
         for b in range(num_batches):
             b_idx = idx[b * bs:(b + 1) * bs]
             if len(b_idx)==0 : 
                 break
-            print(' >> ',x_test[b_idx])
+            
             x = LT(x_test[b_idx]).to(self.device)
+           
             score_values = self.model(x)
             vals = score_values.cpu().data.numpy().tolist()
             results.extend(vals)
@@ -170,10 +171,12 @@ class AD_model_container():
         self.model.load_state_dict(torch.load(path))
         self.model.to(self.device)
         self.model.eval()
+        self.model.mode = 'test'
         return
 
     def predict(self,x_test):
         return self.score_samples(x_test)
 
+    
 
 

@@ -64,9 +64,9 @@ def main(
         x_pos,
         x_neg,
         num_epochs=epochs,
-        tol=0.1
+        tol=0.025
     )
-    container.save_model('saved_model/{}'.format(DIR))
+    container.save_model(os.path.join(saved_model_dir,DIR))
     return
 
 

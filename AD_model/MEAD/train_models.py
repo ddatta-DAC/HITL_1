@@ -59,7 +59,7 @@ def main(
     total_entity_count = sum(domain_dims.values())
     model = AD.AD_model_container(total_entity_count, emb_dim=emb_dim, device=device, lr= lr)
     model.train_model(x_pos, x_neg, batch_size=batch_size, epochs=epochs)
-    model.save_model(os.path.join(saved_model_dir,'/{}'.format(DIR)))
+    model.save_model(os.path.join(saved_model_dir,DIR))
     return
 
 
