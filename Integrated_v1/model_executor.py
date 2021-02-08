@@ -313,7 +313,7 @@ def main_executor(
             label = 0
         obj = record_class(
             df_low.iloc[i].to_dict(),
-            label=label,
+            _label=label,
             is_unserialized=True
         )
         obj_list.append(obj)
