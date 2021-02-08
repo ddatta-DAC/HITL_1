@@ -229,7 +229,7 @@ def obtain_normal_samples(
     for i in tqdm(range(df_high.shape[0])):
         record_obj = record_class(
             _df.iloc[i].to_dict(),
-            label=-1,
+            _label=-1,
             is_unserialized=True
         )
         obj_list.append(record_obj)
