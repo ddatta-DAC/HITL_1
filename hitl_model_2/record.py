@@ -46,8 +46,8 @@ class record_class:
             if d == id_col:
                 continue
             if is_unserialized:
-                non_serial_id = e
+                non_serial_id = int(e)
             else:
-                non_serial_id = record_class.serialID_to_entityID[e]
+                non_serial_id = record_class.serialID_to_entityID[int(e)]
             self.x.append(record_class.embedding[d][non_serial_id])
         self.x = np.array(self.x)
