@@ -29,7 +29,7 @@ def initialize(
         _serialID_mapping_loc,
         _embedding_data_path
 ):
-    global explantions_file_path
+    global explanations_file_path
     global embedding_data_path
     global serialID_mapping_loc
     global domain_dims
@@ -150,7 +150,7 @@ def execute_with_input(
         x_ij_test = np.array(x_ij_test)
 
         new_scores = clf_obj.predict_bEF(x_entityIds, x_ij_test)
-        old_scores = working_df['cur_score'].values
+        old_scores = working_df[ 'cur_score'].values
         _delta = new_scores - old_scores
         working_df['delta'] = _delta
         working_df = working_df.sort_values(by='delta', ascending=False)
