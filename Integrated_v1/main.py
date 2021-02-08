@@ -109,4 +109,4 @@ result = model_executor.main_executor(
     combined_df=data
 )
 # print(tmp.head(10))
-result.to_Csv('tmp.csv',index=None)
+result.to_csv('tmp.csv',index=None)
