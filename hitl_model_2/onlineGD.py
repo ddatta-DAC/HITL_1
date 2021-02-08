@@ -162,6 +162,6 @@ class onlineGD:
                 self.prior_grad_vectors[i].append(avg_gradients[i])
 
                 # Update the weights
-        W = W - final_gradient
+        W = W - 0.01 * final_gradient
         self.W_cur = W
         return final_gradient, W

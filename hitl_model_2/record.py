@@ -24,7 +24,16 @@ class record_class:
                 emb = normalize(emb, axis=1)
             record_class.embedding[domain] = emb
         return
-
+    
+    @staticmethod
+    def __obtainEntityFeatureInteraction__( domain_1,  entity_1, domain_2, entity_2, interaction_type = 'concat'):
+        vec1 =  record_class.embedding[domain_1][entity_1] 
+        vec2 =  record_class.embedding[domain_2][entity_2]
+        if interaction_type == 'mul':
+            return vec1 * vec2
+        if interaction_type == 'concat':
+            return np.concatenate([vec1, vec2],axis=-1)
+        
     def __init__(self, _record, _label):
         _record = OrderedDict(_record)
         id_col = 'PanjivaRecordID'

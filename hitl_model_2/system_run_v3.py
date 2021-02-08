@@ -36,6 +36,7 @@ anomalies_neg_fpath = None
 feedback_batch_size = None
 top_K_count = None
 interaction_type = 'concat'
+
 '''
 embedding_data_path  = './../../createGraph_trade/saved_model_data/{}'.format(DIR)
 serialID_mapping_loc = './../../generated_data_v1/{}/idMapping.csv'.format(DIR)
@@ -43,7 +44,6 @@ anomalies_pos_fpath = './../../generated_data_v1/generated_anomalies/{}/pos_anom
 anomalies_neg_fpath = './../../generated_data_v1/generated_anomalies/{}/neg_anomalies.csv'.format(DIR)
 explantions_f_path =  './../../generated_data_v1/generated_anomalies/{}/pos_anomalies_explanations.json'.format(DIR)
 '''
-
 
 def setup_config(DIR):
     global explantions_file_path
