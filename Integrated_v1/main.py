@@ -5,9 +5,11 @@ import os
 from pathlib import Path
 from os.path import join as pjoin
 import numpy as np
-from common_utils import utils
 
-DIR = None
+import sys
+sys.path.append('./../..')
+sys.path.append('./..')
+from common_utils import utils
 config = None
 AD_result_loc = None
 data_dir = None
@@ -15,13 +17,19 @@ anomalies_dir = None
 ID_COL = 'PanjivaRecordID'
 
 
-def setup(DIR):
+def setup():
+    global DIR
     global AD_result_loc
     global anomalies_dir
+    global data_dir
     global config
+    print(DIR)
     with open('config.yaml', 'r') as fh:
-        config = yaml.parse(fh)
+        config = yaml.safe_load(fh)
     AD_result_loc = config['AD_result_loc']
+    anomalies_dir = config['anomalies_dir']
+    data_dir = config['data_dir']
+    print(anomalies_dir)
     return
 
 
@@ -41,7 +49,7 @@ def read_in_data():
     # Not considering negative anomalies
     # ------------------------------------
     # This file is in un-serialized format
-    df_test_data = pd.read.csv(pjoin(data_dir, DIR, 'test_data.csv'), index_col=None)
+    df_test_data = pd.read_csv(pjoin(data_dir, DIR, 'test_data.csv'), index_col=None)
 
     df_combined = df_test_data.copy().append(df_pos_anomalies, ignore_index=True)
     df_combined = df_combined.merge(
@@ -56,3 +64,8 @@ def read_in_data():
     df_combined = df_combined.rename(columns={'rank': 'score'})
 
     return df_combined
+
+DIR = 'us_import1'
+setup()
+tmp = read_in_data()
+print(tmp.head(10))
