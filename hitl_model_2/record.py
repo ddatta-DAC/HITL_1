@@ -34,15 +34,20 @@ class record_class:
         if interaction_type == 'concat':
             return np.concatenate([vec1, vec2],axis=-1)
         
-    def __init__(self, _record, _label):
+    def __init__(self, _record, _label, is_unserialized = False):
         _record = OrderedDict(_record)
         id_col = 'PanjivaRecordID'
         self.id = _record[id_col]
         domains = list(record_class.embedding.keys())
         self.x = []
         self.label = _label
+
         for d, e in _record.items():
-            if d == id_col: continue
-            non_serial_id = record_class.serialID_to_entityID[e]
+            if d == id_col:
+                continue
+            if is_unserialized:
+                non_serial_id = e
+            else:
+                non_serial_id = record_class.serialID_to_entityID[e]
             self.x.append(record_class.embedding[d][non_serial_id])
         self.x = np.array(self.x)

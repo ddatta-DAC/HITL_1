@@ -35,10 +35,12 @@ class onlineGD:
             num_coeff,
             emb_dim,
             _gradient_fn = None,
-            interaction_type = 'mul'
+            interaction_type = 'mul',
+            learning_rate=0.2
     ):
         self.num_coeff = num_coeff
         self.coeff_mask: ndarray = np.zeros(num_coeff)
+        self.learning_rate = learning_rate
         self.prior_grad_vectors = {
             k: [] for k in range(num_coeff)
         }
@@ -162,6 +164,6 @@ class onlineGD:
                 self.prior_grad_vectors[i].append(avg_gradients[i])
 
                 # Update the weights
-        W = W - 0.01 * final_gradient
+        W = W - self.learning_rate * final_gradient
         self.W_cur = W
         return final_gradient, W
