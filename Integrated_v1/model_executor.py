@@ -306,7 +306,7 @@ def main_executor(
 
     obj_list = []
     for i in tqdm(range(df_low.shape[0])):
-        _id = df_low.iloc[i][ID_COL].values[0]
+        _id = df_low.iloc[i][ID_COL]
         if _id in list_allTrueAnomalies:
             label = 1
         else:
