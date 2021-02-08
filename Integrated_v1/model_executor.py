@@ -16,7 +16,7 @@ from hitl_model_2.onlineGD import onlineGD
 from hitl_model_2.linear_model_v2 import linearClassifier_bEF
 from tqdm import tqdm
 
-explantions_file_path = None
+explanations_file_path = None
 embedding_data_path = None
 serialID_mapping_loc = None
 domain_dims = None
@@ -198,7 +198,7 @@ def get_trained_classifier(
 def obtain_normal_samples(
         df,
         min_count=2,
-        company_columns=['PanjivaConsigneeID', 'PanjivaShipperID']
+        company_columns=['ConsigneePanjivaID', 'ShipperPanjivaID']
 ):
     global domain_dims
     _df = df.copy()
@@ -281,7 +281,7 @@ def main_executor(
     del df_low['label']
     del df_low['score']
 
-    print('Explanations fetched from :: ', explantions_file_path)
+    print('Explanations fetched from :: ', explanations_file_path)
     # Read in the explanations
     with open(explanations_file_path, 'rb') as fh:
         explanations = json.load(fh)
