@@ -22,13 +22,14 @@ serialID_mapping_loc = None
 domain_dims = None
 DIR = None
 ID_COL = 'PanjivaRecordID'
+interaction_type = 'concat'
 
 def initialize(
         _DIR,
         _explanations_file_path,
         _serialID_mapping_loc,
         _embedding_data_path,
-        _domain_dims,
+        _domain_dims
 ):
     global explanations_file_path
     global embedding_data_path
@@ -84,10 +85,11 @@ def execute_with_input(
 ):
     global domain_dims
     global ID_COL
+    global interaction_type
 
     BATCH_SIZE = batch_size
     working_df['delta'] = 0
-    GD_obj = onlineGD(num_coeff, emb_dim, learning_rate=0.05)
+    GD_obj = onlineGD(num_coeff, emb_dim, learning_rate=0.05, interaction_type=interaction_type)
     W = clf_obj.W.cpu().data.numpy()
     GD_obj.set_original_W(W)
 
@@ -176,7 +178,8 @@ def get_trained_classifier(
     classifier_obj = linearClassifier_bEF(
         num_domains = num_domains ,
         emb_dim = emb_dim,
-        num_epochs=num_epochs
+        num_epochs=num_epochs,
+        interaction_type = interaction_type
     )
 
     classifier_obj.setup_binaryFeatures(
