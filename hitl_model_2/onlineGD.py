@@ -11,7 +11,7 @@ import sys
 import warnings
 from scipy.linalg import qr
 from scipy import linalg
-from loss_function_grad import calculate_cosineDist_gradient, calculate_dotProd_gradient, maxDotProd_gradient
+from hitl_model_2.loss_function_grad import calculate_cosineDist_gradient, calculate_dotProd_gradient, maxDotProd_gradient
 
 warnings.filterwarnings("ignore")
 sys.path.append('./..')
