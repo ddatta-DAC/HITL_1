@@ -48,7 +48,8 @@ def setup():
         _DIR=DIR,
         _embedding_data_path=embedding_data_path,
         _serialID_mapping_loc=serialID_mapping_loc,
-        _explanations_file_path=explanations_file_path
+        _explanations_file_path=explanations_file_path,
+        _domain_dims=domain_dims
     )
 
     return

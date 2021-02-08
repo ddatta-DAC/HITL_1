@@ -27,7 +27,8 @@ def initialize(
         _DIR,
         _explanations_file_path,
         _serialID_mapping_loc,
-        _embedding_data_path
+        _embedding_data_path,
+        _domain_dims,
 ):
     global explanations_file_path
     global embedding_data_path
@@ -38,7 +39,7 @@ def initialize(
     explanations_file_path = _explanations_file_path
     embedding_data_path = _embedding_data_path
     serialID_mapping_loc = _serialID_mapping_loc
-    domain_dims = None
+    domain_dims = _domain_dims
     DIR = _DIR
     return
 
