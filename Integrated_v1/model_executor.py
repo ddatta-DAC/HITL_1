@@ -226,6 +226,7 @@ def obtain_normal_samples(
     del df_high['score']
 
     obj_list = []
+    print(df_high.head(10))
     for i in tqdm(range(df_high.shape[0])):
         record_obj = record_class(
             _df.iloc[i].to_dict(),
