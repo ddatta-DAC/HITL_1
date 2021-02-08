@@ -1,3 +1,7 @@
 AD_result_loc : './../AD_model/ensemble_output'
 data_dir : './../generated_data_v1'
 anomalies_dir : './../generated_data_v1/generated_anomalies'
+embedding_data_path : './../createGraph_trade/saved_model_data/{}'
+explanations_file_path : './../generated_data_v1/generated_anomalies/{}/pos_anomalies_explanations.json'
+serialID_mapping_loc : './../generated_data_v1/{}/idMapping.csv'
+domain_dims_file_path : './../generated_data_v1/{}/domain_dims.pkl'

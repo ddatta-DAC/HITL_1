@@ -8,11 +8,12 @@ import numpy as np
 from collections import OrderedDict
 import json
 import sys
+
 sys.path.append('./../..')
 sys.path.append('./..')
 from common_utils import utils
 import pickle
-
+import model_executor
 
 config = None
 AD_result_loc = None
@@ -21,6 +22,7 @@ anomalies_dir = None
 ID_COL = 'PanjivaRecordID'
 domain_dims = None
 serialID_mapping_loc = None
+
 
 def setup():
     global DIR
@@ -35,11 +37,21 @@ def setup():
     anomalies_dir = config['anomalies_dir']
     data_dir = config['data_dir']
 
-    with open(pjoin(data_dir,DIR,'domain_dims.pkl'), 'rb') as fh:
+    with open(pjoin(data_dir, DIR, 'domain_dims.pkl'), 'rb') as fh:
         domain_dims = OrderedDict(pickle.load(fh))
+
+    serialID_mapping_loc = config['serialID_mapping_loc'].format(DIR)
+    explanations_file_path = config['explanations_file_path'].format(DIR)
+    embedding_data_path = config['embedding_data_path'].format(DIR)
+
+    model_executor.initialize(
+        _DIR=DIR,
+        _embedding_data_path=embedding_data_path,
+        _serialID_mapping_loc=serialID_mapping_loc,
+        _explanations_file_path=explanations_file_path
+    )
+
     return
-
-
 
 
 def get_serialID_to_entityID():
@@ -51,8 +63,6 @@ def get_serialID_to_entityID():
     for i, row in mapping_df.iterrows():
         serialID_to_entityID[row['serial_id']] = row['entity_id']
     return serialID_to_entityID
-
-
 
 
 def read_in_data():
@@ -83,15 +93,19 @@ def read_in_data():
     df_combined = df_combined.sort_values(by='rank', ascending=False)
     # higher score -> anomalous
     df_combined = df_combined.rename(columns={'rank': 'score'})
-    df_combined['score'] = df_combined['score'].apply(lambda x : 1.000-x)
+    df_combined['score'] = df_combined['score'].apply(lambda x: 1.000 - x)
     # Ensure columns are in correct order
-    columns = [ID_COL] + list(sorted(domain_dims.keys())) + ['label','score']
+    columns = [ID_COL] + list(sorted(domain_dims.keys())) + ['label', 'score']
     df_combined = df_combined[columns]
     print(columns)
-
     return df_combined
+
 
 DIR = 'us_import1'
 setup()
-# tmp = read_in_data()
+data = read_in_data()
+result = model_executor.main_executor(
+    combined_df=data
+)
 # print(tmp.head(10))
+result.to_Csv('tmp.csv',index=None)

@@ -23,9 +23,6 @@ domain_dims = None
 DIR = None
 ID_COL = 'PanjivaRecordID'
 
-
-
-
 def initialize(
         _DIR,
         _explanations_file_path,
