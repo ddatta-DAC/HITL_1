@@ -85,15 +85,29 @@ def main(
     label_list_normal = [0 for _ in range(test_x.shape[0])]
     label_list_p = [1 for _ in range(test_x_Pos.shape[0])]
     label_list_n = [-1 for _ in range(test_x_Neg.shape[0])]
-    checkpoints = [2.5,5,7.5]
+#     checkpoints = [1,2,3,4,5,6,7,8,9,10]
+    checkpoints = np.arange(0.5,5.5,0.5)
     list_indiv_ranks = []
+    
+    recallResults = pd.DataFrame( columns=["Top-K %","Recall", "embedding_size"] )
+    
+    flag = False
     for model_type, _list in config.items():
+        
+        if model_type == 'mead' :
+            flag=True
+        else:
+            flag=False
+            
         model_container_obj =None
         if _list is None or len(_list)==0: 
             continue 
-        if print_details :print(model_type)
+        if print_details :
+            print(model_type)
+            
         for _dict in _list:
-            emb_dim = _dict['emb_dim']
+            emb_dim = int(_dict['emb_dim'])
+
             if model_type == 'ape':
                 model_container_obj = ape_model.APE_container(
                     emb_dim=emb_dim,
@@ -134,14 +148,23 @@ def main(
                 tmp = df.head(int(df.shape[0]*k/100))
                 prec1 = len(tmp.loc[tmp['label']!=0])/len(tmp)
                 prec2 = len(tmp.loc[tmp['label']==1])/len(tmp)
-                recall_1 = len(tmp.loc[tmp['label']!=0])/len(label_list_p)
+                recall_1 = len(tmp.loc[tmp['label']!=0])/len(label_list_p+label_list_n)
                 recall_2 = len(tmp.loc[tmp['label']==1])/len(label_list_p)
                 if print_details :
-                    print( k/100, 'Precision:', prec1, prec2 ,' | Recall :', recall_1,recall_2)
-            
-            if model_type == 'mead' or True:
+                    print( k/100, 'Precision:', prec1, ' | Recall :', recall_1)
+                    # print( k/100, 'Precision:', prec1, prec2 ,' | Recall :', recall_1,recall_2)
+                    # print(k/100, 'Recall: {:.4f}'.format(recall_1))
+                if flag:
+                    recallResults = recallResults.append({
+                        "Top-K %":k/100,
+                        "Precision": prec1,
+                        "Recall":recall_1, 
+                        "embedding_size":emb_dim
+                    },ignore_index=True)
+            if model_type == 'mead' :
                 list_indiv_ranks.append(df[ID_COL].values.tolist())
-    
+                
+    print('Number of models', len(list_indiv_ranks))
     print('-----')
     combined_rank = borda_count.borda_count(list_indiv_ranks)
     combined_rank = combined_rank.rename(columns={'ID':ID_COL})
@@ -151,8 +174,7 @@ def main(
     if include_negative_anomalies is False:
         labels = label_list_normal + label_list_p 
         id_list = id_list_normal + id_list_Pos 
-        
-            
+               
     data = { 'label': labels,  'PanjivaRecordID': id_list}
     _df = pd.DataFrame(data)
     _df = _df.merge(combined_rank, on=[ID_COL], how ='inner')
@@ -161,13 +183,22 @@ def main(
         tmp = _df.head(int(_df.shape[0]*k/100))
         prec1 = len(tmp.loc[tmp['label']!=0])/len(tmp)
         prec2 = len(tmp.loc[tmp['label']==1])/len(tmp)
-        recall_1 = len(tmp.loc[tmp['label']!=0])/len(label_list_p)
+        recall_1 = len(tmp.loc[tmp['label']!=0])/len(label_list_p+label_list_n)
         recall_2 = len(tmp.loc[tmp['label']==1])/len(label_list_p)
-        print( k/100, 'Precision:', prec1, prec2 ,' | Recall :', recall_1,recall_2)
-    
+        # print( k/100, 'Precision:', prec1, prec2 ,' | Recall :', recall_1,recall_2)
+        print( k/100, 'Precision:', prec1, ' | Recall :', recall_1)
+        recallResults = recallResults.append({
+                        "Top-K %":k/100,
+                        "Recall":recall_1, 
+                        "Precision": prec1,
+                        "embedding_size":'Combined'
+                    },ignore_index=True)
     _df.to_csv(os.path.join(OUTPUT_DIR,DIR,'AD_output.csv'),index=None)  
-        
-
+   
+    fname = 'results_recall_{}.csv'.format(DIR)
+    recallResults.to_csv(fname,index=False)
+    
+# ===============================================================================
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--DIR', choices=['us_import1', 'us_import2', 'us_import3', 'us_import4', 'us_import5'],
