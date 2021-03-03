@@ -180,7 +180,7 @@ class linearClassifier_bEF(
         for dom, dim in self.domain_dims.items():
             if dom in binaryF_domains:
                 self.valid_binaryF_domains[_tmpidx] = 1
-        _tmpidx += 1
+            _tmpidx += 1
 
         # -------------------------------
         # Setup the initial weights
