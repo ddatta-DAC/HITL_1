@@ -36,7 +36,7 @@ class onlineGD:
             emb_dim,
             _gradient_fn = None,
             interaction_type = 'mul',
-            learning_rate=0.2
+            learning_rate=0.1
     ):
         self.num_coeff = num_coeff
         self.coeff_mask: ndarray = np.zeros(num_coeff)
