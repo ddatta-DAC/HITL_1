@@ -34,4 +34,4 @@ class record_class:
             if d == id_col: continue
             non_serial_id = record_class.serialID_to_entityID[e]
             self.x.append(record_class.embedding[d][non_serial_id])
-        self.x = np.array(self.x)
+        self.x = np.concatenate(self.x)
