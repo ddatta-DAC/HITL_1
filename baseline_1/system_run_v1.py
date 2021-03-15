@@ -14,7 +14,6 @@ from tqdm import tqdm
 import pickle
 import copy
 import json
-from onlineGD import onlineGD
 import linear_model
 import seaborn as sns
 from matplotlib import pyplot as plt

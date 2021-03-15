@@ -9,9 +9,7 @@ import time
 from pathlib import Path
 
 
-
-
-def plot_figure(df1, df2):
+def plot_figure(df1):
     global DIR
     global feedback_batch_size
     global top_K_count
@@ -23,7 +21,6 @@ def plot_figure(df1, df2):
     plt.xlabel('Batch index', fontsize=14)
     plt.ylabel('Accuracy in next {} samples'.format(top_K_count), fontsize=14)
     sns.lineplot(data=df1, x="idx", y="acc", markers=True, label='Input provided')
-    sns.lineplot(data=df2, x="idx", y="acc", markers=True, label='No Input')
     plt.legend(fontsize=14)
     plt.grid()
     plt.savefig(os.path.join(figure_save_dir, '{}_results_{}_{}.png'.format(DIR, feedback_batch_size, top_K_count)))
@@ -39,17 +36,13 @@ def checkPerformance():
     df1 = None
     df2 = None
     for n in range(num_runs):
-        results_with_input, results_no_input = main_module.main_executor()
+        results_with_input = main_module.main_executor()
         if df1 is None:
             df1 = results_with_input
         else:
             df1 = df1.append(results_with_input, ignore_index=True)
-        if df2 is None:
-            df2 = results_no_input
-        else:
-            df2 = df2.append(results_no_input, ignore_index=True)
 
-    plot_figure(df1, df2)
+    plot_figure(df1)
     return
 
 parser.add_argument(
@@ -76,9 +69,7 @@ main_module.feedback_batch_size = args.feedback_size
 top_K_count = args.top_K
 main_module.top_K_count = top_K_count 
 main_module.setup_config(main_module.DIR)
-
 figure_save_dir = 'accuracy_check'
 path_obj = Path(figure_save_dir)
 path_obj.mkdir(exist_ok=True,parents=True)
-
 checkPerformance()
