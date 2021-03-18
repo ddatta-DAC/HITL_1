@@ -59,12 +59,16 @@ class linearClassifier_bEF(
             lr=LR,
             weight_decay=self.L2_lambda
         )
-
+        self.entity_flag_scale = 0.25
         self.num_epochs = num_epochs
         self.batch_size = batch_size
 
         return
-
+    
+    
+    def set_entity_flag_scale(self,val):
+        self.entity_flag_scale = val
+    
     # -------------
     # Main function to be called when training the model
     # Fits on the interaction features only
@@ -217,7 +221,7 @@ class linearClassifier_bEF(
         # Setup the initial weights
         # This scaling factor :: 0.025 is important  - since it assigns importance.
         # -------------------------------
-        self.binary_W = np.ones(self.total_entity_count) * 0.1
+        self.binary_W = np.ones(self.total_entity_count) * self.entity_flag_scale
 
         # This variable stores which of the entities have been marked 1 ( as in occurring as relevant )
         # Initially everything is 0
