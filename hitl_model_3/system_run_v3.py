@@ -1,3 +1,13 @@
+# %load_ext autoreload
+# %autoreload 2
+import os
+import argparse
+
+import seaborn as sns
+from matplotlib import pyplot as plt
+import time
+from pathlib import Path
+
 #!/usr/bin/env python
 # coding: utf-8
 import pandas as pd
@@ -7,7 +17,7 @@ import sys
 import glob
 from tqdm import tqdm
 from sklearn.preprocessing import normalize
-
+from GD import GD
 sys.path.append('./.')
 sys.path.append('./..')
 from pathlib import Path
@@ -15,8 +25,7 @@ import argparse
 import pickle
 import copy
 import json
-from onlineGD import onlineGD
-from loss_function_grad import maxDotProd_gradient, calculate_cosineDist_gradient
+from GD import GD
 from linear_model_v2 import linearClassifier_bEF
 import seaborn as sns
 from record import record_class
@@ -31,9 +40,10 @@ embedding_data_path = None
 serialID_mapping_loc = None
 anomalies_pos_fpath = None
 anomalies_neg_fpath = None
-feedback_batch_size = None
-top_K_count = None
 interaction_type = 'concat'
+DIR = None
+
+
 '''
 embedding_data_path  = './../../createGraph_trade/saved_model_data/{}'.format(DIR)
 serialID_mapping_loc = './../../generated_data_v1/{}/idMapping.csv'.format(DIR)
@@ -41,7 +51,6 @@ anomalies_pos_fpath = './../../generated_data_v1/generated_anomalies/{}/pos_anom
 anomalies_neg_fpath = './../../generated_data_v1/generated_anomalies/{}/neg_anomalies.csv'.format(DIR)
 explantions_f_path =  './../../generated_data_v1/generated_anomalies/{}/pos_anomalies_explanations.json'.format(DIR)
 '''
-
 
 def setup_config(DIR):
     global explantions_file_path
@@ -65,10 +74,11 @@ def setup_config(DIR):
         domain_dims = OrderedDict(pickle.load(fh))
     return
 
-
 # ---------------------------------------------------------------------------------
 def get_serialID_to_entityID():
     global serialID_mapping_loc
+    global DIR
+    
     idMapper_file = os.path.join(serialID_mapping_loc)
     mapping_df = pd.read_csv(idMapper_file, index_col=None)
     serialID_to_entityID = {}
@@ -76,7 +86,6 @@ def get_serialID_to_entityID():
     for i, row in mapping_df.iterrows():
         serialID_to_entityID[row['serial_id']] = row['entity_id']
     return serialID_to_entityID
-
 
 # ---------------------------
 # Get records which are deemed nominal/normal
@@ -89,15 +98,14 @@ def obtain_normal_samples():
 
     _df = normal_data.sample(5000)
     obj_list = []
+    data_x = []
     for i in tqdm(range(_df.shape[0])):
         obj = record_class(_df.iloc[i].to_dict(), -1)
+        obj.calc_features()
         obj_list.append(obj)
-    data_x = []
-    for _obj in obj_list:
-        data_x.append(_obj.x)
-    data_x = np.stack(data_x)
+        data_x.append(obj.features)
+    
     return data_x
-
 
 def get_trained_classifier(X, y, num_domains, emb_dim, num_epochs=10000):
     global domain_dims
@@ -136,137 +144,6 @@ def fetch_entityID_arr_byList(data_df, id_list):
     return np.array(X).astype(int)
 
 
-def execute_with_input(
-        clf_obj,
-        working_df,
-        ref_data_df,
-        domainInteraction_index,
-        num_coeff,
-        emb_dim,
-        data_ID_to_matrix,
-        check_next_values=[20],
-        batch_size=25
-):
-    global domain_dims
-    global interaction_type
-    ID_COL = 'PanjivaRecordID'
-    BATCH_SIZE = batch_size
-    working_df['delta'] = 0
-    from GD import GD
-    GD_obj = GD(
-        num_coeff,
-        emb_dim,
-        interaction_type = interaction_type
-    )
-
-    W = clf_obj.W.cpu().data.numpy()
-    GD_obj.set_original_W(W)
-
-    max_num_batches = len(working_df) // BATCH_SIZE + 1
-    precision = []
-    recall = []
-    domain_list = list(domain_dims.keys())
-    total_posCount = len(working_df.loc[working_df['label'] == 1])
-
-    # -------------------------------------------------
-    #  Main loop
-    # -------------------------------------------------
-    next_K_precision = []
-    prev_discovered_count = 0
-
-    discovered_df = pd.DataFrame( columns = list(working_df.columns))
-    for batch_idx in tqdm(range(max_num_batches)):
-        print('Batch : {}'.format(batch_idx))
-        cur = working_df.head(BATCH_SIZE).reset_index(drop=True)
-        # -----
-        # Count( of discovered in the current batch ( at the top; defined by batch size )
-        # -----
-        cum_cur_discovered = prev_discovered_count + len(cur.loc[cur['label'] == 1])
-        prev_discovered_count = cum_cur_discovered
-        _recall = float(cum_cur_discovered) / total_posCount
-        recall.append(_recall)
-
-        x_ij = []
-        x_entityIds = []
-
-        flags = []  # Whether a pos anomaly or not
-        terms = []  # Explanation terms
-        discovered_df = discovered_df.append(cur, ignore_index=True)
-
-        for i, row in discovered_df.iterrows():
-            _mask = np.zeros(len(domainInteraction_index))
-            if row['label'] == 1:
-                _mask[row['expl_1']] = 1
-                _mask[row['expl_2']] = 1
-                flags.append(1)
-                terms.append((row['expl_1'], row['expl_2'],))
-            else:
-                flags.append(0)
-                terms.append(())
-            id_value = row['PanjivaRecordID']
-            x_ij.append(data_ID_to_matrix[id_value])
-
-            row_dict = ref_data_df.loc[(ref_data_df[ID_COL] == id_value)].iloc[0].to_dict()
-            x_entityIds.append([row_dict[d] for d in domain_list])
-
-        x_entityIds = np.array(x_entityIds)
-        x_ij = np.array(x_ij)
-
-        updated_W = GD_obj.update_weight(
-            flags,
-            terms,
-            x_ij
-        )
-
-        # final_gradient, _W = OGD_obj.update_weight(
-        #     flags,
-        #     terms,
-        #     x_ij
-        # )
-
-        # ----------------------------------------------------
-        # Update Model
-        # ----------------------------------------------------
-        clf_obj.update_W(updated_W)
-        clf_obj.update_binary_VarW(x_entityIds, flags)
-
-        _tail_count = len(working_df) - BATCH_SIZE
-        working_df = working_df.tail(_tail_count).reset_index(drop=True)
-
-        if len(working_df) == 0:
-            break
-
-        # Obtain scores
-        x_ij_test = []
-        x_entityIds = fetch_entityID_arr_byList(
-            ref_data_df,
-            working_df['PanjivaRecordID'].values.tolist()
-        )
-
-        for _id in working_df['PanjivaRecordID'].values:
-            x_ij_test.append(data_ID_to_matrix[_id])
-
-        x_ij_test = np.array(x_ij_test)
-
-        new_scores = clf_obj.predict_bEF(x_entityIds, x_ij_test)
-
-        old_scores = working_df['cur_score'].values
-        _delta = new_scores - old_scores
-        working_df['delta'] = new_scores
-        working_df = working_df.sort_values(by='delta', ascending=False)
-        working_df = working_df.reset_index(drop=True)
-        _next_K_precision = []
-        for check_next in check_next_values:
-            tmp = working_df.head(check_next)
-            _labels = tmp['label'].values
-            res = len(np.where(_labels == 1)[0])
-            _precison = res / check_next
-            _next_K_precision.append(_precison)
-        next_K_precision.append(_next_K_precision)
-    return next_K_precision, recall
-
-
-
 
 def get_data():
     global anomalies_pos_fpath
@@ -281,6 +158,7 @@ def get_data():
     anom_pos_df = pd.read_csv(anomalies_pos_fpath, index_col=None)
     anom_neg_df = pd.read_csv(anomalies_neg_fpath, index_col=None)
     serialID_to_entityID = get_serialID_to_entityID()
+    print('Setting up record class embedding...',embedding_data_path)
     record_class.__setup_embedding__(embedding_data_path, serialID_to_entityID, _normalize=True)
     main_data_df = pd.concat(
         [anom_pos_df,
@@ -293,12 +171,12 @@ def get_data():
     obj_list = []
     for i in tqdm(range(anom_neg_df.shape[0])):
         obj = record_class(anom_neg_df.iloc[i].to_dict(), -1)
-        obj.calc_features(interaction_type='concat')
+        obj.calc_features()
         obj_list.append(obj)
 
     for i in tqdm(range(anom_pos_df.shape[0])):
         obj = record_class(anom_pos_df.iloc[i].to_dict(), 1)
-        obj.calc_features(interaction_type='concat')
+        obj.calc_features()
         obj_list.append(obj)
 
     # Read in the explantions
@@ -307,6 +185,7 @@ def get_data():
 
     explanations = {int(k): [sorted(_) for _ in v] for k, v in explanations.items()}
     data_x = []
+    data_x_features = []
     data_id = []
     data_label = []
     data_ID_to_matrix = {}
@@ -316,20 +195,22 @@ def get_data():
         data_id.append(_obj.id)
         data_label.append(_obj.label)
         data_ID_to_matrix[_obj.id] = _obj.features
-
+        data_x_features.append(_obj.features)
     data_x = np.stack(data_x)
     data_label = np.array(data_label)
     data_id = np.array(data_id)
-    return main_data_df, explanations , data_id, data_x, data_label, data_ID_to_matrix
+    return main_data_df, explanations , data_id, data_x, data_label, data_x_features, data_ID_to_matrix
 
-def main_executor():
-    global domain_dims
-    global test_data_serialized_loc
-    global feedback_batch_size
-    global DIR
+
+
+# ------------------------------------------------------
+def execute_with_input(
+    check_next = 25,
+    batch_size= 25
+):
 
     serialID_to_entityID = get_serialID_to_entityID()
-    main_data_df, explanations, data_id, data_x, data_label, data_ID_to_matrix = get_data()
+    main_data_df, explanations, data_id, data_x, data_label, data_x_features, data_ID_to_matrix = get_data()
     emb_dim = record_class.embedding['HSCode'].shape[1]
 
     # -------------------------------------------
@@ -349,14 +230,17 @@ def main_executor():
     data_label = data_label[idx]
     data_id = data_id[idx]
 
-    X_0 = data_x  # Relevant anomalies
+    X_0 = np.array(data_x_features)[idx.tolist()]  # Relevant anomalies
     X_1 = obtain_normal_samples()  # Nominal
+
+
+    X_1 =np.array(X_1)
+
     y_0 = np.ones(X_0.shape[0])
     y_1 = -1 * np.ones(X_1.shape[0])
     y = np.hstack([y_0, y_1])
     X = np.vstack([X_0, X_1])
     num_coeff = len(domainInteraction_index)
-    print('Number of coefficients::', num_coeff)
 
     classifier_obj = get_trained_classifier(
         X,
@@ -395,50 +279,144 @@ def main_executor():
 
     data_reference_df['cur_score'] = data_reference_df['original_score'].values
 
+
     # To get random results
     # Randomization
     cur_df = data_reference_df.copy()
     cur_df = cur_df.sample(frac=1).reset_index(drop=True)
     cur_df = shuffle(cur_df).reset_index(drop=True)
-    check_next_values = [20]
+    
+    clf_obj = copy.deepcopy(classifier_obj)
+    
+    working_df=cur_df.copy(deep=True)
+    ref_data_df=main_data_df.copy(deep=True)
 
-    next_K_precision_wI, recall_wI = execute_with_input(
-        clf_obj=copy.deepcopy(classifier_obj),
-        working_df=cur_df,
-        ref_data_df=main_data_df,
-        domainInteraction_index=domainInteraction_index,
-        num_coeff=num_coeff,
-        emb_dim=emb_dim,
-        data_ID_to_matrix=data_ID_to_matrix,
-        check_next_values=check_next_values,
-        batch_size=feedback_batch_size
+    precision = []
+    recall = []
+    domain_list = list(domain_dims.keys())
+    total_posCount = len(working_df.loc[working_df['label'] == 1])
+
+    # -------------------------------------------------
+    #  Main loop
+    # -------------------------------------------------
+    next_K_precision = []
+    prev_discovered_count = 0
+    BATCH_SIZE = batch_size
+    ID_COL = 'PanjivaRecordID'
+    discovered_df = pd.DataFrame( columns = list(working_df.columns))
+    
+    W = clf_obj.W.cpu().data.numpy()
+    GD_obj = GD(
+        num_coeff,
+        emb_dim,
+        interaction_type = interaction_type
     )
+    GD_obj.set_original_W(W)
+    num_batches  = len(data_reference_df)//batch_size
+    zero_count = 0
+    for batch_idx in tqdm(range(num_batches)):
+        print('Batch : {}'.format(batch_idx+1))
+        if batch_idx == 0:
+            lr = 0.25
+            max_iter = 1000
+        else:
+            lr = 1
+            max_iter = 500
 
-    def aux_create_result_df(
-            next_K_precision, recall, check_next_values
-    ):
-        next_K_precision = np.array(next_K_precision)
-        recall = np.array(recall)
-        idx = np.arange(max(recall.shape[0], next_K_precision.shape[0]))
+        cur = working_df.head(BATCH_SIZE).reset_index(drop=True)
+        if len(cur) < 2:
+            break
+       
+        _tail_count = len(working_df) - BATCH_SIZE
+        tmp = working_df.tail(_tail_count).reset_index(drop=True)
+        if len(tmp.loc[tmp['label']==1]) == 0 :
+            zero_count +=1
+            if zero_count > 5:
+                next_K_precision.append(0)
+                working_df = working_df.tail(_tail_count).reset_index(drop=True)
+                continue
+        else :
+            zero_count = 0    
+        # -----
+        # Count( of discovered in the current batch ( at the top; defined by batch size )
+        # -----
+        cum_cur_discovered = prev_discovered_count + len(cur.loc[cur['label'] == 1])
+        prev_discovered_count = cum_cur_discovered
+        _recall = float(cum_cur_discovered) / total_posCount
+        recall.append(_recall)
 
-        # fill in zeros
-        if next_K_precision.shape[0] < idx.shape[0]:
-            pad = np.zeros([idx.shape[0] - next_K_precision.shape[0], next_K_precision.shape[1]])
-            next_K_precision = np.concatenate([next_K_precision,pad],axis=0)
+        x_ij = []
+        x_entityIds = []
 
-        columns = ['idx'] + ['recall'] + ['Prec@next_' + str(_) for _ in check_next_values]
-        _data = np.concatenate([
-            idx.reshape([-1, 1]),
-            recall.reshape([-1, 1]),
-            next_K_precision,
-        ], axis=-1)
-        result_df = pd.DataFrame(
-            _data, columns=columns
+        flags = []  # Whether a pos anomaly or not
+        terms = []  # Explanation terms
+        discovered_df = discovered_df.append(cur, ignore_index=True)
+        
+        for i, row in discovered_df.iterrows():
+            _mask = np.zeros(len(domainInteraction_index))
+            if row['label'] == 1:
+                _mask[row['expl_1']] = 1
+                _mask[row['expl_2']] = 1
+                flags.append(1)
+                terms.append((row['expl_1'], row['expl_2'],))
+            else:
+                flags.append(0)
+                terms.append(())
+            id_value = row['PanjivaRecordID']
+            x_ij.append(data_ID_to_matrix[id_value])
+
+            row_dict = ref_data_df.loc[(ref_data_df[ID_COL] == id_value)].iloc[0].to_dict()
+            x_entityIds.append([row_dict[d] for d in domain_list])
+
+        x_entityIds = np.array(x_entityIds)
+        x_ij = np.array(x_ij)
+
+        updated_W = GD_obj.update_weight(
+            flags,
+            terms,
+            x_ij,
+            lr = lr,
+            max_iter= max_iter
         )
-        return result_df
+        
+        # ----------------------------------------------------
+        # Update Model
+        # ----------------------------------------------------
+        clf_obj.update_W(updated_W)
+        clf_obj.update_binary_VarW(x_entityIds, flags)
 
-    results_with_input = aux_create_result_df(next_K_precision_wI, recall_wI, check_next_values)
-    results_no_input = aux_create_result_df(next_K_precision_nI, recall_nI, check_next_values)
-    return results_with_input, results_no_input
+        _tail_count = len(working_df) - BATCH_SIZE
+        working_df = working_df.tail(_tail_count).reset_index(drop=True)
+
+
+        # Obtain scores
+        x_ij_test = []
+        x_entityIds = fetch_entityID_arr_byList(
+            ref_data_df,
+            working_df['PanjivaRecordID'].values.tolist()
+        )
+        for _id in working_df['PanjivaRecordID'].values:
+            x_ij_test.append(data_ID_to_matrix[_id])
+
+        x_ij_test = np.array(x_ij_test)
+
+        new_scores = clf_obj.predict_bEF(x_entityIds, x_ij_test)
+
+        old_scores = working_df['cur_score'].values
+        _delta = new_scores - old_scores
+        working_df['delta'] = new_scores
+        working_df = working_df.sort_values(by='delta', ascending=False)
+        working_df = working_df.reset_index(drop=True)
+        
+        tmp = working_df.head(check_next)
+        _labels = tmp['label'].values
+        res = len(np.where(_labels == 1)[0])
+        _precison = res / check_next
+        next_K_precision.append(_precison)
+        
+    return next_K_precision
+
+
+
 
 

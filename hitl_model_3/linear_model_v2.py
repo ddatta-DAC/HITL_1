@@ -112,11 +112,11 @@ class linearClassifier_bEF(
         for i in range(feature_dim):
             _x_i = _x_[i]
             _xw_i = torch.matmul(_x_i, self.W[i])
-            print(_xw_i.shape)
+           
             terms.append(_xw_i)
 
         wx = torch.stack(terms, dim=-1)
-        print(wx.shape)
+       
         sum_wx = torch.sum(wx, dim=-1)
         return sum_wx
 
@@ -160,7 +160,7 @@ class linearClassifier_bEF(
                 np.ones([bs // 2]),
                 np.ones([bs // 2]) * -1
             ])
-            _loss = self.train_iter(_x, _y, reg=True)
+            _loss = self.train_iter(_x, _y)
             _loss = _loss.cpu().data.numpy().mean()
             if e % log_interval == 0:
                 print('Step {} Loss {:.4f}'.format(e + 1, _loss))
@@ -226,14 +226,17 @@ class linearClassifier_bEF(
         for d_idx in range(self.num_domains):
             if self.valid_binaryF_domains[d_idx] == 1:
                 _entity_idx = X[:, d_idx].reshape(-1)  # _entity_idx is a slice along column
-                e_idx = []
+                pos_e_idx = []
+                neg_e_idx = []
                 # For each sample check if it is labelled 1
                 # Get the non zero entries
                 for j in range(label_flag.shape[0]):
-                    if label_flag[j] != 1:
-                        continue
-                    e_idx.append(_entity_idx[j])
-                self.entity_flag[d_idx][e_idx] = 1
+                    if label_flag[j] == 1:
+                        pos_e_idx.append(_entity_idx[j])
+                    else:
+                        neg_e_idx.append(_entity_idx[j])
+                self.entity_flag[d_idx][pos_e_idx] = 1
+                self.entity_flag[d_idx][neg_e_idx] = -1
         return
 
     # --------------------

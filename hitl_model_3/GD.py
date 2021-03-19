@@ -6,9 +6,12 @@ import sys
 import warnings
 warnings.filterwarnings("ignore")
 sys.path.append('./..')
+from tqdm import tqdm 
+from joblib import Parallel,delayed
+from tqdm import trange
+from joblib import parallel_backend
 
 class GD:
-
     def __init__(
             self,
             num_coeff,
@@ -33,23 +36,24 @@ class GD:
             self,
             labels = [],
             list_feature_mod_idx = [],
-            X=None,
-            tol = 0.02,
-            lr = 0.1,
-            max_iter =1000
+            X = None,
+            tol = 0.025,
+            lr = 0.25,
+            max_iter = 1000,
+            min_lr = 0.05 
     ):
         X = np.array(X)
-        print(X.shape)
         W = np.copy(self.W_cur)
+        
         num_coeff = self.num_coeff
         target_y = [ ]
-
+        
 
         for _label in labels:
-            if _label == 1:
-                target_y.append(2.0)
+            if _label == 1.5:
+                target_y.append(1.0)
             else:
-                target_y.append(0)
+                target_y.append(0.0)
 
         target_y = np.array(target_y)
         # W has shape [num_coeff, emb_dim * 2]
@@ -57,39 +61,68 @@ class GD:
         feature_corr_idx = []
         for idx in range(X.shape[0]):
             _exp_features_ = list_feature_mod_idx[idx]
+            
             if len(list_feature_mod_idx) == 0:
-                _feature_idx = np.ones(num_coeff)/num_coeff
+                _feature_idx = np.ones(num_coeff)/num_coeff * 2
             else:
                 _feature_idx = np.zeros(num_coeff)
-                _feature_idx[_exp_features_] = 1
+                for ef in _exp_features_:
+                    _feature_idx[ef] = 5
                 _feature_idx = _feature_idx/len(list_feature_mod_idx)
             feature_corr_idx.append(_feature_idx)
         feature_corr_idx = np.array(feature_corr_idx)
-        print('>>> _feature_idx', feature_corr_idx.shape)
-        iter = 0
-        while iter <= max_iter:
-            iter +=1
+        
+#         t = trange(max_iter, desc='Training error: ', leave=True)
+        orig_error = 0
+        
+        for i in range(max_iter):
             pred_y = []
-            for idx in range(X.shape[0]):
-                _pred_y = np.sum([ np.matmul(X[idx][j], W[j]) for j in range(num_coeff)])
-                pred_y.append(_pred_y)
-
-            pred_y = np.array(pred_y)
-            err = target_y - pred_y
+#             tqdm._instances.clear()
+            
+#             for idx in range(X.shape[0]):
+#                 _pred_y = np.sum([ np.matmul(X[idx][j], W[j]) for j in range(num_coeff)])
+#                 pred_y.append(_pred_y)
+            
+            a = (X * W)
+            b = np.sum(a,axis=-1)
+            c = np.sum(b,axis=1)
+            
+            pred_y = np.array(c)
+            err = (target_y - pred_y)
             err = err.reshape([err.shape[0],1])
-            if np.mean(err) <= tol :
+            abs_error = np.abs(np.mean(np.power(err,2)))
+            
+            if i == 0:
+                orig_error = abs_error
+#             t.refresh()
+#             t.set_description("Error : {:.4f}".format(np.abs(np.mean(err))))
+#             t.refresh()
+            
+            if abs_error <= tol :
                 break
 
             # apply correction
             adjusted_error = err * feature_corr_idx
-            for coef_idx in range(num_coeff):
-                # _grad has shape [batch, emb*x ]
-                assert adjusted_error[:, coef_idx].shape[0] == X.shape[0]
+            
+            # Parallelize 
+            def aux(coef_idx):
+                nonlocal adjusted_error
+                nonlocal X
+                
                 _grad = adjusted_error[:, coef_idx].reshape([-1,1]) * X[:, coef_idx]
-                assert _grad.shape[1] == X[:, coef_idx].shape[1]
-                # sum gradient over batch
-                batch_grad = np.mean(_grad,axis=1)
-                W[coef_idx] = W[coef_idx] + lr * batch_grad
+                
+                batch_grad = np.mean(_grad, axis=0)
+                batch_grad = np.clip(batch_grad, -0.1, 0.1)
+                return (coef_idx, batch_grad)
+            
+#             with parallel_backend('threading', n_jobs = num_coeff):
+            res = Parallel(n_jobs = num_coeff)( 
+                delayed(aux)(coef_idx,) for coef_idx in range(num_coeff)
+            )
+            for r in res :
+                W[r[0]] = W[r[0]] + lr * r[1]
+                
+            lr = max(min_lr, lr * 0.99)
 
         return W
 

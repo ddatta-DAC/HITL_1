@@ -1,0 +1,10 @@
+python3 accuracy_check.py --DIR us_import4  &
+python3 accuracy_check.py --DIR us_import4  &
+python3 accuracy_check.py --DIR us_import4  &
+python3 accuracy_check.py --DIR us_import4  &
+python3 accuracy_check.py --DIR us_import4  &
+python3 accuracy_check.py --DIR us_import4  &
+python3 accuracy_check.py --DIR us_import4  &
+python3 accuracy_check.py --DIR us_import4  &
+python3 accuracy_check.py --DIR us_import4  &
+python3 accuracy_check.py --DIR us_import4  &

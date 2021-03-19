@@ -22,6 +22,7 @@ class record_class:
         record_class.embedding = {}
         record_class.serialID_to_entityID = serialID_to_entityID
         files = glob.glob(os.path.join(embedding_path, '**.npy'))
+        
         for f in sorted(files):
             emb = np.load(f)
             domain = f.split('/')[-1].split('_')[-1].split('.')[0]
@@ -31,7 +32,7 @@ class record_class:
         record_class.domains = list(record_class.embedding.keys())
         return
 
-    def __init__(self, _record, _label):
+    def __init__(self, _record, _label, interaction_type='concat'):
         _record = OrderedDict(_record)
         id_col = 'PanjivaRecordID'
         self.id = _record[id_col]
@@ -43,15 +44,16 @@ class record_class:
             non_serial_id = record_class.serialID_to_entityID[e]
             self.x.append(record_class.embedding[d][non_serial_id])
         self.x = np.array(self.x)
+        self.interaction_type = interaction_type
 
-
-    def calc_features(self, interaction_type='concat'):
+    def calc_features(self):
         num_domains = len(record_class.domains)
         terms = []
+        interaction_type = self.interaction_type
         if interaction_type is not None:
             for i in range(num_domains):
                 for j in range(i + 1, num_domains):
-                    if self.interaction_type == 'concat':
+                    if interaction_type == 'concat':
                         x1x2 = np.concatenate([self.x[i], self.x[j]])
                     elif interaction_type == 'mul':
                         x1x2 = self.x[i] * self.x[j]
@@ -59,3 +61,4 @@ class record_class:
             self.features = np.array(terms)
         else:
             self.features = np.concatenate(self.x)
+      
