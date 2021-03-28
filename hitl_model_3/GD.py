@@ -50,8 +50,8 @@ class GD:
         
 
         for _label in labels:
-            if _label == 1.5:
-                target_y.append(1.0)
+            if _label == 1:
+                target_y.append(1.5)
             else:
                 target_y.append(0.0)
 
