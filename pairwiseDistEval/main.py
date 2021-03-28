@@ -15,7 +15,7 @@ from itertools import combinations
 from pathlib import Path
 import numpy as np
 sys.path.append('./..')
-from utils import utils
+from common_utils import utils
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
@@ -24,6 +24,7 @@ config = None
 ID_COL = 'PanjivaRecordID'
 mapping_dict = None
 op_save_dir = None
+DATA_LOC = None
 from AD_model.MEAD.model_AD_1 import AD_model_container
 # -----------------------------------------------------------------
 
@@ -41,7 +42,16 @@ def setup_up(subDIR):
     global emb_save_dir
     global mapping_dict
     global op_save_dir
+    global anomaly_data_loc
+    global DATA_LOC
+    
+    with open('config.yaml', 'r') as fh:
+        config = yaml.safe_load(fh)
+    
+    DATA_LOC = config['DATA_LOC']
+    saved_model_dir = config['saved_model_dir']
 
+    anomaly_data_loc =  os.path.join(config['anomaly_data_loc'],subDIR)
     emb_save_dir = config['emb_save_dir']
     Path(emb_save_dir).mkdir(exist_ok=True, parents=True)
     Path(os.path.join(emb_save_dir,subDIR)).mkdir(exist_ok=True, parents=True)
@@ -90,10 +100,28 @@ def get_pairwise_dist(subDIR):
     df_train = pd.read_csv(
         os.path.join(DATA_LOC, subDIR, 'train_data.csv'), index_col=None
     )
+    
     df_test = pd.read_csv(
         os.path.join(DATA_LOC, subDIR, 'test_data.csv'), index_col=None
     )
+    
     df = df_train.append(df_test, ignore_index=True)
+    
+    # Also include anomalies
+    
+    pos_anomalies = pd.read_csv(
+        os.path.join(anomaly_data_loc, 'pos_anomalies.csv') ,index_col=None
+    )
+    neg_anomalies = pd.read_csv(
+        os.path.join(anomaly_data_loc, 'neg_anomalies.csv') ,index_col=None
+    )
+    
+
+    neg_anomalies['PanjivaRecordID'] = neg_anomalies['PanjivaRecordID'].apply(lambda x : int(str(x).split('00')[0]) )
+    pos_anomalies['PanjivaRecordID'] = pos_anomalies['PanjivaRecordID'].apply(lambda x : int(str(x).split('00')[0]) )
+    anomalies = neg_anomalies.append(pos_anomalies, ignore_index=True)
+    df = df.append(anomalies,ignore_index=True)
+
     del df[ID_COL]
     df = df.drop_duplicates()
     df = utils.convert_to_serializedID_format(
@@ -102,7 +130,7 @@ def get_pairwise_dist(subDIR):
         data_source_loc=DATA_LOC
     )
 
-    domain_dims = get_domain_dims(subDIR)
+    domain_dims = get_domain_dims()
     emb_file_list = glob.glob(os.path.join(
         emb_save_dir,
         subDIR,
@@ -165,13 +193,13 @@ def precompute_distances(
     global saved_model_dir
     global emb_save_dir
 
-    domain_dims = get_domain_dims(subDIR)
+    domain_dims = get_domain_dims()
     entity_count = sum(domain_dims.values())
 
     # ----
     # Find the models trained for the current epoch
     # ----
-    valid_emb_dims = [12,26,20,24]
+    valid_emb_dims = [12,20,24]
     trained_model_list = []
 
     for _emb_ in valid_emb_dims:
@@ -202,15 +230,9 @@ def precompute_distances(
 
 # =============================================================
 
-with open('config.yaml', 'r') as fh:
-    config = yaml.safe_load(fh)
-DATA_LOC = config['DATA_LOC']
-saved_model_dir = config['saved_model_dir']
-with open(os.path.join(DATA_LOC, 'epoch_fileList.json'), 'r') as fh:
-    epoch_fileList = json.load(fh)
 
 
-DIR = 'us_import1'
+DIR = 'us_import3'
 setup_up(DIR)
 precompute_distances(DIR)
 
