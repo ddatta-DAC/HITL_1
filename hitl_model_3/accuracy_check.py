@@ -62,12 +62,13 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+top_K = args.top_K
 DIR = args.DIR
 main_module.DIR = args.DIR
 main_module.setup_config(DIR)
 
 # -----------------------------------
-figure_save_dir = 'accuracy_check'+'/' + DIR
+figure_save_dir = os.path.join('accuracy_check', DIR, str(top_K))
 path_obj = Path(figure_save_dir)
 path_obj.mkdir(exist_ok=True, parents=True)
 
